@@ -30,21 +30,6 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class SecurityConfig {
-
-
-/*
-    private final JwtFilter jwtFilter;
-
-    private final CustomUserDetailsService customUserDetailsService;
-
-    public SecurityConfig(JwtFilter jwtFilter, CustomUserDetailsService customUserDetailsService) {
-        this.jwtFilter = jwtFilter;
-        this.customUserDetailsService = customUserDetailsService;
-    }
-*/
-
-
-    //@Profile("dev")
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring()
@@ -52,7 +37,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    protected SecurityFilterChain securityFilterChain(HttpSecurity http, UserRepository userRepository) throws Exception {
+    protected SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            UserRepository userRepository,
+            OAuth2AuthenticationSuccessHandler authSuccessHandler,
+            CustomAuth2Service customAuth2Service
+    ) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable);
 
         // Route protected
@@ -64,9 +54,8 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authenticationEntryPoint())
                 ).oauth2Login(oauth -> oauth
-                        .loginPage("/api/auth/login")
-                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService(userRepository)))
-                        .successHandler(oAuth2SuccessHandler())
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customAuth2Service))
+                        .successHandler(authSuccessHandler)
                 )
                 .cors(Customizer.withDefaults());
 
@@ -85,14 +74,6 @@ public class SecurityConfig {
         return new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
     }
 
-    @Bean
-    public CustomAuth2Service customOAuth2UserService(UserRepository userRepository) {
-        return new CustomAuth2Service(userRepository);
-    }
 
-    @Bean
-    public OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler() {
-        return new OAuth2AuthenticationSuccessHandler();
-    }
 
 }

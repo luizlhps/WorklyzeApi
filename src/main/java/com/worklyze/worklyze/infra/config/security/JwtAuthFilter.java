@@ -37,19 +37,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
 
-
+/*
             Algorithm algorithm = Algorithm.HMAC256(jwtService.getSecret());
             JWTVerifier verifier = JWT.require(algorithm).build();
             DecodedJWT decodedJWT = verifier.verify(jwt);
 
             String email = decodedJWT.getSubject(); // ou decodedJWT.getClaim("email").asString()
 
-            User user = userRepository.findByEmailOrUsername(email).orElse(null);
-            if (user != null) {
+            User user = userRepository.findByEmailOrUsername(email).orElse(null);*/
+       /*     if (user != null) {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(user, null, List.of());
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-            }
+            }*/
         }
 
         chain.doFilter(req, res);
