@@ -38,7 +38,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
         String email = oidcUser.getAttribute("email");
 
-        User user = userRepository.findByEmailOrUsername(email, null).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         String accessToken = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);

@@ -8,6 +8,7 @@ import com.worklyze.worklyze.domain.entity.TypeProvider;
 import com.worklyze.worklyze.domain.entity.User;
 import com.worklyze.worklyze.domain.enums.TypeProviderEnum;
 import com.worklyze.worklyze.infra.repository.UserRepository;
+import com.worklyze.worklyze.shared.auth.AuthExceptionCode;
 import com.worklyze.worklyze.shared.auth.PasswordHash;
 import com.worklyze.worklyze.shared.exceptions.UnauthorizedRequestException;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,8 @@ import org.springframework.web.client.HttpClientErrorException;
 
 import java.nio.file.attribute.UserPrincipal;
 
+import static com.worklyze.worklyze.shared.auth.AuthExceptionCode.USUARIO_EMAIL_SENHA_INVALIDO;
+
 @Service
 public class AuthService {
     private final UserRepository userRepository;
@@ -32,7 +35,7 @@ public class AuthService {
     }
 
     public AuthResponse register(AuthRequest request) {
-        if (userRepository.findByEmailOrUsername(request.email(), null).isPresent()) {
+        if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new RuntimeException("Email já cadastrado");
         }
 
@@ -56,8 +59,8 @@ public class AuthService {
     }
 
     public AuthResponse login(AuthRequest request) {
-        User user = userRepository.findByEmailOrUsername(request.email(), null)
-                .orElseThrow(() -> new UsernameNotFoundException("Email não encontrado"));
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new UnauthorizedRequestException(USUARIO_EMAIL_SENHA_INVALIDO.getMessage(), USUARIO_EMAIL_SENHA_INVALIDO.getCode()));
 
         boolean isPasswordCorrect = PasswordHash.checkPassword(user.getPassword());
 
@@ -83,7 +86,7 @@ public class AuthService {
             throw new UnauthorizedRequestException("Refresh Token Inválido", null);
         }
 
-        var user = userRepository.findByEmailOrUsername(email, email).orElseThrow(() -> new UnauthorizedRequestException("Usuário não encontrado", null));
+        var user = userRepository.findByEmail(email).orElseThrow(() -> new UnauthorizedRequestException("Usuário não encontrado", null));
 
         if (!user.getRefreshToken().equals(request.refreshToken())) {
             throw new UnauthorizedRequestException("Refresh Token Inválido", null);

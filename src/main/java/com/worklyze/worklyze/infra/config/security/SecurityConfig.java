@@ -1,6 +1,7 @@
 package com.worklyze.worklyze.infra.config.security;
 
 import com.worklyze.worklyze.infra.repository.UserRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,23 +42,29 @@ public class SecurityConfig {
             HttpSecurity http,
             UserRepository userRepository,
             OAuth2AuthenticationSuccessHandler authSuccessHandler,
-            CustomAuth2Service customAuth2Service
+            CustomAuth2Service customAuth2Service,
+            CorsConfig corsconfig
     ) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable);
 
         // Route protected
         http.authorizeHttpRequests(authorizeRequests ->
-                        authorizeRequests.
-                                requestMatchers("/error").permitAll()
-                                .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
-                                .requestMatchers("/**").authenticated())
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(authenticationEntryPoint())
-                ).oauth2Login(oauth -> oauth
-                        .userInfoEndpoint(userInfo -> userInfo.userService(customAuth2Service))
-                        .successHandler(authSuccessHandler)
-                )
-                .cors(Customizer.withDefaults());
+                authorizeRequests.
+                        requestMatchers("/error").permitAll()
+                        .requestMatchers("/v1/auth/**", "/oauth2/**").permitAll()
+                        .anyRequest().authenticated());
+
+        http.exceptionHandling(exception -> exception
+                .authenticationEntryPoint(customAuthenticationEntryPoint())
+                .accessDeniedHandler(customAccessDeniedHandler())
+        );
+
+        http.oauth2Login(oauth -> oauth
+                .userInfoEndpoint(userInfo -> userInfo.userService(customAuth2Service))
+                .successHandler(authSuccessHandler)
+        );
+
+        http.cors(Customizer.withDefaults());
 
         // Set session management to stateless
         http.sessionManagement(session ->
@@ -65,15 +72,26 @@ public class SecurityConfig {
         );
 
 
-
         return http.build();
     }
 
     @Bean
-    AuthenticationEntryPoint authenticationEntryPoint() {
-        return new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
+    public AuthenticationEntryPoint customAuthenticationEntryPoint() {
+        return (request, response, authException) -> {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"status\":401,\"error\":\"Unauthorized\"}");
+        };
     }
 
+    @Bean
+    public AccessDeniedHandler customAccessDeniedHandler() {
+        return (request, response, accessDeniedException) -> {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"status\":403,\"error\":\"Forbidden\"}");
+        };
+    }
 
 
 }

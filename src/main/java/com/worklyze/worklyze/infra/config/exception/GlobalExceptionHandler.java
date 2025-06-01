@@ -1,14 +1,19 @@
 package com.worklyze.worklyze.infra.config.exception;
 
 import com.worklyze.worklyze.shared.exceptions.CustomException;
+import com.worklyze.worklyze.shared.exceptions.NotFoundException;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.HashMap;
 
@@ -16,6 +21,14 @@ import java.util.HashMap;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(NoHandlerFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ResponseEntity<RestErrorMessage> handleNotFound(NoHandlerFoundException ex) {
+        RestErrorMessage errorResponse = new RestErrorMessage(HttpStatus.NOT_FOUND, ex.getMessage(), "NOT_FOUND", ex);
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
 
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<RestErrorMessage> handleCustomException(CustomException ex) {
@@ -45,4 +58,6 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<RestErrorMessage>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+
 }

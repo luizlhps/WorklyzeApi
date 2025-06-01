@@ -1,3 +1,5 @@
 package com.worklyze.worklyze.application.dto;
 
-public record AuthRefresh(String refreshToken) {}
+import jakarta.validation.constraints.NotBlank;
+
+public record AuthRefresh(@NotBlank String refreshToken) {}
