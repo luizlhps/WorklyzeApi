@@ -15,7 +15,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Demand extends BaseEntity {
+public class Demand extends BaseEntity<UUID> {
 
     @Id
     @GeneratedValue

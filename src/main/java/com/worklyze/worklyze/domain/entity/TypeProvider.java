@@ -8,13 +8,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TypeProvider extends BaseEntity {
+public class TypeProvider extends BaseEntity<Long> {
     @Id
     @GeneratedValue
     private Long id;

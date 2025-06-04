@@ -15,7 +15,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Address extends BaseEntity {
+public class Address extends BaseEntity<UUID> {
 
     @Id
     @GeneratedValue

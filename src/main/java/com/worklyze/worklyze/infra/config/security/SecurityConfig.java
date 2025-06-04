@@ -52,7 +52,7 @@ public class SecurityConfig {
                 authorizeRequests.
                         requestMatchers("/error").permitAll()
                         .requestMatchers("/v1/auth/**", "/oauth2/**").permitAll()
-                        .anyRequest().authenticated());
+                        .anyRequest().permitAll()); //.authenticated());
 
         http.exceptionHandling(exception -> exception
                 .authenticationEntryPoint(customAuthenticationEntryPoint())

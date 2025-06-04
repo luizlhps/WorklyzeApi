@@ -16,7 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name="\"user\"")
-public class User extends BaseEntity {
+public class User extends BaseEntity<UUID> {
 
     @Id
     @GeneratedValue

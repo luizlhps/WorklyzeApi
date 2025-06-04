@@ -1,0 +1,51 @@
+package com.worklyze.worklyze.adapter.web;
+
+import com.worklyze.worklyze.application.dto.AddressDto;
+import com.worklyze.worklyze.application.dto.AddressGetAllInDto;
+import com.worklyze.worklyze.application.dto.AddressGetAllOutDto;
+import com.worklyze.worklyze.application.service.AddressService;
+import com.worklyze.worklyze.domain.entity.Address;
+import com.worklyze.worklyze.shared.page.interfaces.PageResult;
+import org.modelmapper.ModelMapper;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/addresses")
+public class AddressController {
+
+    private final AddressService addressService;
+    private final ModelMapper modelMapper;
+
+    public AddressController(AddressService addressService, ModelMapper modelMapper) {
+        this.addressService = addressService;
+        this.modelMapper = modelMapper;
+    }
+
+    @PostMapping
+    public ResponseEntity<Address> create(@RequestBody AddressDto dto) {
+        Address entity = modelMapper.map(dto, Address.class);
+        Address created = addressService.create(entity);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Address> update(@PathVariable UUID id, @RequestBody AddressDto dto) {
+        Address entity = modelMapper.map(dto, Address.class);
+        entity.setId(id);
+        Address updated = addressService.update(entity);
+        return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("")
+    public ResponseEntity<PageResult<AddressGetAllOutDto>> update(
+            @ParameterObject @ModelAttribute AddressGetAllInDto dto) {
+        var updated = addressService.findAll(dto);
+        return ResponseEntity.ok(updated);
+    }
+}

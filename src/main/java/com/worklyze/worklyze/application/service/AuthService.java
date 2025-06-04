@@ -11,6 +11,7 @@ import com.worklyze.worklyze.infra.repository.UserRepository;
 import com.worklyze.worklyze.shared.auth.AuthExceptionCode;
 import com.worklyze.worklyze.shared.auth.PasswordHash;
 import com.worklyze.worklyze.shared.exceptions.UnauthorizedRequestException;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,10 +29,12 @@ import static com.worklyze.worklyze.shared.auth.AuthExceptionCode.USUARIO_EMAIL_
 public class AuthService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final ModelMapper modelMapper;
 
-    public AuthService(UserRepository userRepository, JwtService jwtService) {
+    public AuthService(UserRepository userRepository, JwtService jwtService, ModelMapper modelMapper) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
+        this.modelMapper = modelMapper;
     }
 
     public AuthResponse register(AuthRequest request) {
@@ -39,8 +42,7 @@ public class AuthService {
             throw new RuntimeException("Email já cadastrado");
         }
 
-        User user = new User();
-        user.setEmail(request.email());
+        User user = modelMapper.map(request, User.class);
 
         var passwordHash = PasswordHash.hash(request.password());
         user.setPassword(passwordHash);

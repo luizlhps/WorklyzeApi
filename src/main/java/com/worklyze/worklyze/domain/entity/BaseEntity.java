@@ -1,5 +1,6 @@
 package com.worklyze.worklyze.domain.entity;
 
+import com.worklyze.worklyze.domain.interfaces.Identifiable;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
@@ -14,7 +15,8 @@ import java.time.OffsetDateTime;
 @MappedSuperclass
 @Getter
 @Setter
-public abstract class BaseEntity {
+public abstract class BaseEntity<ID> implements Identifiable<ID> {
+    @Column(updatable = false)
     @CreationTimestamp
     private OffsetDateTime createdAt;
 

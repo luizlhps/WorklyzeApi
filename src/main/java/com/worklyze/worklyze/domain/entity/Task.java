@@ -13,7 +13,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Task extends BaseEntity {
+public class Task extends BaseEntity<UUID> {
 
     @Id
     @GeneratedValue

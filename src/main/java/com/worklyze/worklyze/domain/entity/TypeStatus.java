@@ -8,12 +8,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TypeStatus extends BaseEntity {
+public class TypeStatus extends BaseEntity<Long> {
 
     @Id
     @GeneratedValue
