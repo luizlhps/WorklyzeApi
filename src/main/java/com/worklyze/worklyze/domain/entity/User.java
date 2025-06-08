@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -31,6 +32,9 @@ public class User extends BaseEntity<UUID> {
     private OffsetDateTime recoveryExpiryTime;
     private String refreshToken;
     private OffsetDateTime refreshTokenExpiryTime;
+
+    @OneToMany(mappedBy = "user")
+    private List<Address> addresses;
 
     @ManyToOne
     @JoinColumn(name = "provider_id")

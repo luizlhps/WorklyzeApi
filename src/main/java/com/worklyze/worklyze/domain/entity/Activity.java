@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.validator.cfg.defs.NotNullDef;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
