@@ -20,4 +20,7 @@ public abstract class BaseEntity<ID> implements Identifiable<ID> {
 
     @UpdateTimestamp
     private OffsetDateTime updatedAt;
+
+    @Column(name = "is_deleted", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean deleted = false;
 }

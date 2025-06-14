@@ -3,6 +3,7 @@ package com.worklyze.worklyze.application.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.worklyze.worklyze.domain.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
@@ -32,6 +33,7 @@ public class JwtService {
         return JWT.create()
                 .withSubject(user.getEmail())
                 .withClaim("provider", user.getTypeProvider().getId())
+                .withClaim("uuid", user.getId().toString())
                 .withIssuedAt(new Date())
                 .withExpiresAt(Date.from(exp))
                 .sign(algorithm);
@@ -51,10 +53,9 @@ public class JwtService {
                 .sign(algorithm);
     }
 
-    public String getEmailFromToken(String token) throws JWTVerificationException {
+    public DecodedJWT decodedJWT(String token) throws JWTVerificationException {
         Algorithm algorithm = Algorithm.HMAC256(SECRET);
-
-        return JWT.require(algorithm).build().verify(token).getSubject();
+        return JWT.require(algorithm).build().verify(token);
     }
 
 }

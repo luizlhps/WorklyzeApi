@@ -23,20 +23,30 @@ public class User extends BaseEntity<UUID> {
     @GeneratedValue
     private UUID id;
 
+    @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false)
     private String surname;
+
     private String username;
+
+    @Column(nullable = false)
     private String email;
+
+    @Column(nullable = false)
     private String password;
+
     private String recoveryToken;
     private OffsetDateTime recoveryExpiryTime;
+
+    @Column(nullable = false)
     private String refreshToken;
-    private OffsetDateTime refreshTokenExpiryTime;
 
     @OneToMany(mappedBy = "user")
     private List<Address> addresses;
 
-    @ManyToOne
-    @JoinColumn(name = "provider_id")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "provider_id", nullable = false)
     private TypeProvider typeProvider;
 }

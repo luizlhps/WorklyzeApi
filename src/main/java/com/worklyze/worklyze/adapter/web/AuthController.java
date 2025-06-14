@@ -1,8 +1,9 @@
 package com.worklyze.worklyze.adapter.web;
 
-import com.worklyze.worklyze.application.dto.AuthRefresh;
-import com.worklyze.worklyze.application.dto.AuthRequest;
-import com.worklyze.worklyze.application.dto.AuthResponse;
+import com.worklyze.worklyze.application.dto.auth.AuthRefresh;
+import com.worklyze.worklyze.application.dto.auth.AuthRegister;
+import com.worklyze.worklyze.application.dto.auth.AuthRequest;
+import com.worklyze.worklyze.application.dto.auth.AuthResponse;
 import com.worklyze.worklyze.application.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody @Valid AuthRequest request) {
+    public ResponseEntity<AuthResponse> register(@RequestBody @Valid AuthRegister request) {
         return ResponseEntity.ok(authService.register(request));
     }
 

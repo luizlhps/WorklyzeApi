@@ -1,0 +1,52 @@
+package com.worklyze.worklyze.application.dto.demand;
+
+import com.worklyze.worklyze.domain.entity.Demand;
+import com.worklyze.worklyze.domain.entity.TypeStatus;
+import com.worklyze.worklyze.domain.entity.User;
+import com.worklyze.worklyze.shared.annotation.AutoMap;
+import com.worklyze.worklyze.shared.page.QueryParamsImpl;
+import com.worklyze.worklyze.shared.page.interfaces.QueryParams;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.UUID;
+
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@AutoMap(Demand.class)
+public class DemandGetAllOutDto  {
+
+    private UUID id;
+    private String name;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private Duration totalTime;
+
+    private DemandGetAllInDto.TypeStatusDto typeStatus;
+    private DemandGetAllInDto.UserDto user;
+
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @AutoMap(TypeStatus.class)
+    public static class TypeStatusDto {
+        private Long id;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @AutoMap(User.class)
+    public static class UserDto {
+        private UUID id;
+    }
+}

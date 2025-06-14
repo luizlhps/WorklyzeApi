@@ -1,27 +1,19 @@
 package com.worklyze.worklyze.application.service;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.worklyze.worklyze.application.dto.AuthRefresh;
-import com.worklyze.worklyze.application.dto.AuthRequest;
-import com.worklyze.worklyze.application.dto.AuthResponse;
+import com.worklyze.worklyze.application.dto.auth.AuthRefresh;
+import com.worklyze.worklyze.application.dto.auth.AuthRegister;
+import com.worklyze.worklyze.application.dto.auth.AuthRequest;
+import com.worklyze.worklyze.application.dto.auth.AuthResponse;
 import com.worklyze.worklyze.domain.entity.TypeProvider;
 import com.worklyze.worklyze.domain.entity.User;
 import com.worklyze.worklyze.domain.enums.TypeProviderEnum;
-import com.worklyze.worklyze.infra.repository.UserRepository;
-import com.worklyze.worklyze.shared.auth.AuthExceptionCode;
+import com.worklyze.worklyze.domain.interfaces.repository.UserRepository;
 import com.worklyze.worklyze.shared.auth.PasswordHash;
 import com.worklyze.worklyze.shared.exceptions.UnauthorizedRequestException;
+import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-
-import java.nio.file.attribute.UserPrincipal;
 
 import static com.worklyze.worklyze.shared.auth.AuthExceptionCode.USUARIO_EMAIL_SENHA_INVALIDO;
 
@@ -37,25 +29,27 @@ public class AuthService {
         this.modelMapper = modelMapper;
     }
 
-    public AuthResponse register(AuthRequest request) {
-        if (userRepository.findByEmail(request.email()).isPresent()) {
+    @Transactional
+    public AuthResponse register(AuthRegister request) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email já cadastrado");
         }
 
         User user = modelMapper.map(request, User.class);
 
-        var passwordHash = PasswordHash.hash(request.password());
+        var passwordHash = PasswordHash.hash(request.getPassword());
         user.setPassword(passwordHash);
 
         TypeProvider typeProvider = new TypeProvider();
         typeProvider.setId(TypeProviderEnum.LOCAL.getValue());
         user.setTypeProvider(typeProvider);
 
-        var accessToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
-
         user.setRefreshToken(refreshToken);
-        userRepository.save(user);
+
+        user = userRepository.create(user);
+
+        var accessToken = jwtService.generateToken(user);
 
         return new AuthResponse(accessToken, refreshToken);
     }
@@ -74,7 +68,7 @@ public class AuthService {
         var refreshToken = jwtService.generateRefreshToken(user);
 
         user.setRefreshToken(refreshToken);
-        userRepository.save(user);
+        userRepository.update(user);
 
         return new AuthResponse(accessToken, refreshToken);
     }
@@ -83,7 +77,8 @@ public class AuthService {
         String email = null;
 
         try {
-            email = jwtService.getEmailFromToken(request.refreshToken());
+            var decodedJWT = jwtService.decodedJWT(request.refreshToken());
+            email = decodedJWT.getSubject();
         } catch (JWTVerificationException ex) {
             throw new UnauthorizedRequestException("Refresh Token Inválido", null);
         }
@@ -98,7 +93,7 @@ public class AuthService {
         var refreshToken = jwtService.generateRefreshToken(user);
 
         user.setRefreshToken(refreshToken);
-        var userSave = userRepository.save(user);
+        var userSave = userRepository.update(user);
 
         return new AuthResponse(accessToken, refreshToken);
     }

@@ -1,0 +1,2 @@
+ALTER TABLE activity
+    ALTER COLUMN end_time DROP NOT NULL;

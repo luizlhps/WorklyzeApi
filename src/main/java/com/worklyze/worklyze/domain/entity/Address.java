@@ -21,12 +21,19 @@ public class Address extends BaseEntity<UUID> {
     @GeneratedValue
     private UUID id;
 
+    @Column(nullable = false)
     private String city;
+
+    @Column(nullable = false)
     private String street;
+
+    @Column(nullable = false)
     private String state;
+
+    @Column(nullable = false)
     private String zip;
 
-    @ManyToOne
+    @ManyToOne(optional = false,fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 }

@@ -1,0 +1,2 @@
+ALTER TABLE demand
+    ALTER COLUMN end_date DROP NOT NULL;

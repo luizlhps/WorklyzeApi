@@ -1,15 +1,13 @@
-package com.worklyze.worklyze.application.dto;
+package com.worklyze.worklyze.application.dto.address;
 
 import com.worklyze.worklyze.domain.entity.Address;
 import com.worklyze.worklyze.shared.annotation.AutoMap;
 import com.worklyze.worklyze.shared.page.QueryParamsImpl;
-import com.worklyze.worklyze.shared.page.interfaces.QueryParams;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springdoc.core.annotations.ParameterObject;
 
 import java.util.UUID;
 

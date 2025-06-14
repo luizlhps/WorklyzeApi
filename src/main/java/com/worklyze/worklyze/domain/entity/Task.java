@@ -1,11 +1,13 @@
 package com.worklyze.worklyze.domain.entity;
 
+import com.worklyze.worklyze.infra.converters.DurationToLongConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Duration;
 import java.util.UUID;
 
 @Entity
@@ -19,18 +21,27 @@ public class Task extends BaseEntity<UUID> {
     @GeneratedValue
     private UUID id;
 
+    @Column(nullable = false)
     private String nome;
-    private String tempoTotal;
-    private String restTotal;
 
-    @ManyToOne
-    @JoinColumn(name = "demand_id")
+    @Column(nullable = false)
+    @Convert(converter = DurationToLongConverter.class)
+    private Duration timeTotal;
+
+
+    @Column(nullable = false)
+    @Convert(converter = DurationToLongConverter.class)
+    private Duration restTotal;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "demand_id", nullable = false)
     private Demand demand;
 
-    @Column(name = "is_deleted")
-    private Boolean isDeleted;
-
-    @ManyToOne
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id")
     private TypeStatus typeStatus;
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 }

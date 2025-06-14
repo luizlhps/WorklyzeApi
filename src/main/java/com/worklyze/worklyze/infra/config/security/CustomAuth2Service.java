@@ -3,18 +3,15 @@ package com.worklyze.worklyze.infra.config.security;
 import com.worklyze.worklyze.domain.entity.TypeProvider;
 import com.worklyze.worklyze.domain.entity.User;
 import com.worklyze.worklyze.domain.enums.TypeProviderEnum;
-import com.worklyze.worklyze.infra.repository.UserRepository;
+import com.worklyze.worklyze.domain.interfaces.repository.UserRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-
 @Service
-public class CustomAuth2Service extends DefaultOAuth2UserService  {
+public class CustomAuth2Service extends DefaultOAuth2UserService {
     private final UserRepository userRepository;
 
     public CustomAuth2Service(UserRepository userRepository) {
@@ -23,10 +20,9 @@ public class CustomAuth2Service extends DefaultOAuth2UserService  {
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        OAuth2User oauthUser  = super.loadUser(userRequest);
+        OAuth2User oauthUser = super.loadUser(userRequest);
 
         String email = oauthUser.getAttribute("email");
-        String username = oauthUser.getAttribute("username");
 
         User existing = userRepository.findByEmail(email).orElseGet(() -> {
             User newUser = new User();
@@ -37,13 +33,12 @@ public class CustomAuth2Service extends DefaultOAuth2UserService  {
             typeProvider.setId(TypeProviderEnum.GOOGLE.getValue());
 
             newUser.setTypeProvider(typeProvider);
-            return userRepository.save(newUser);
+            return userRepository.create(newUser);
         });
 
-        return new DefaultOAuth2User(
-                Collections.singleton(() -> "ROLE_USER"),
-                oauthUser.getAttributes(),
-                "email"
+
+        return new CustomUserPrincipal(
+                existing
         );
     }
 

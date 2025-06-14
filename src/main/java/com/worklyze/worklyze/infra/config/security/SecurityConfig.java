@@ -1,11 +1,9 @@
 package com.worklyze.worklyze.infra.config.security;
 
-import com.worklyze.worklyze.infra.repository.UserRepository;
+import com.worklyze.worklyze.domain.interfaces.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -18,14 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.access.AccessDeniedHandlerImpl;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -43,7 +34,9 @@ public class SecurityConfig {
             UserRepository userRepository,
             OAuth2AuthenticationSuccessHandler authSuccessHandler,
             CustomAuth2Service customAuth2Service,
-            CorsConfig corsconfig
+            CorsConfig corsconfig,
+            CustomUserDetailsService customUserDetailsService
+            , JwtAuthFilter jwtAuthFilter
     ) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable);
 
@@ -52,12 +45,14 @@ public class SecurityConfig {
                 authorizeRequests.
                         requestMatchers("/error").permitAll()
                         .requestMatchers("/v1/auth/**", "/oauth2/**").permitAll()
-                        .anyRequest().permitAll()); //.authenticated());
+                        .requestMatchers("/**").authenticated());
 
         http.exceptionHandling(exception -> exception
                 .authenticationEntryPoint(customAuthenticationEntryPoint())
                 .accessDeniedHandler(customAccessDeniedHandler())
         );
+
+        http.authenticationProvider(authenticationProvider(customUserDetailsService));
 
         http.oauth2Login(oauth -> oauth
                 .userInfoEndpoint(userInfo -> userInfo.userService(customAuth2Service))
@@ -71,17 +66,8 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         );
 
-
+        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
-    }
-
-    @Bean
-    public AuthenticationEntryPoint customAuthenticationEntryPoint() {
-        return (request, response, authException) -> {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"status\":401,\"error\":\"Unauthorized\"}");
-        };
     }
 
     @Bean
@@ -93,5 +79,22 @@ public class SecurityConfig {
         };
     }
 
+    @Bean
+    public AuthenticationProvider authenticationProvider(CustomUserDetailsService userDetailsService) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        return provider;
+    }
 
+    @Bean
+    public AuthenticationEntryPoint customAuthenticationEntryPoint() {
+        return (request, response, authException) -> {
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+            String message = authException.getMessage();
+            response.getWriter().write("{\"error\":\"" + message + "\"}");
+        };
+    }
 }

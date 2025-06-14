@@ -1,8 +1,8 @@
 package com.worklyze.worklyze.adapter.web;
 
-import com.worklyze.worklyze.application.dto.AddressDto;
-import com.worklyze.worklyze.application.dto.AddressGetAllInDto;
-import com.worklyze.worklyze.application.dto.AddressGetAllOutDto;
+import com.worklyze.worklyze.application.dto.address.AddressDto;
+import com.worklyze.worklyze.application.dto.address.AddressGetAllInDto;
+import com.worklyze.worklyze.application.dto.address.AddressGetAllOutDto;
 import com.worklyze.worklyze.application.service.AddressService;
 import com.worklyze.worklyze.domain.entity.Address;
 import com.worklyze.worklyze.shared.page.interfaces.PageResult;

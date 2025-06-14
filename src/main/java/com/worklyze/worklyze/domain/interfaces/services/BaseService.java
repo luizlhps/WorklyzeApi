@@ -10,7 +10,9 @@ public interface BaseService<TEntity, TId> {
 
     <TOutDto, TInputDto> TOutDto create(TInputDto dtoClass, Class<TEntity> entityClass, Class<TOutDto> dtoOutClass);
 
-    <TOutDto, TInputDto> TOutDto update(TInputDto dtoClass, Class<TEntity> entityClass, Class<TOutDto> dtoOutClass) throws InvocationTargetException, IllegalAccessException;
+    <TOutDto, TInputDto> TOutDto update(TInputDto dtoClass, Class<TEntity> entityClass, Class<TOutDto> dtoOutClass);
 
     <TOutDto> TOutDto findById(TId id, Class<TOutDto> dtoOutClass);
+
+    void delete(TId id);
 }

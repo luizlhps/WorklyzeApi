@@ -1,0 +1,11 @@
+ALTER TABLE task
+    ADD user_id UUID;
+
+ALTER TABLE task
+    ALTER COLUMN user_id SET NOT NULL;
+
+ALTER TABLE task
+    ADD CONSTRAINT FK_TASK_ON_USER FOREIGN KEY (user_id) REFERENCES "user" (id);
+
+ALTER TABLE demand
+    ALTER COLUMN end_date DROP NOT NULL;

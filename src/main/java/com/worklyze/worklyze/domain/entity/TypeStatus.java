@@ -1,5 +1,6 @@
 package com.worklyze.worklyze.domain.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -21,5 +22,6 @@ public class TypeStatus extends BaseEntity<Long> {
     @GeneratedValue
     private Long id;
 
+    @Column(nullable = false)
     private String nome;
 }

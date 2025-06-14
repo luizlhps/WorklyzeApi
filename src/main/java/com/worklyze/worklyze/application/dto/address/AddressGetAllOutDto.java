@@ -1,15 +1,10 @@
-package com.worklyze.worklyze.application.dto;
+package com.worklyze.worklyze.application.dto.address;
 
 import com.worklyze.worklyze.domain.entity.Address;
-import com.worklyze.worklyze.domain.entity.BaseEntity;
 import com.worklyze.worklyze.domain.entity.TypeProvider;
 import com.worklyze.worklyze.domain.entity.User;
 import com.worklyze.worklyze.shared.annotation.AutoMap;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

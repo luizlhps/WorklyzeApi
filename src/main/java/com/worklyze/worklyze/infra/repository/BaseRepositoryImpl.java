@@ -24,9 +24,9 @@ import java.util.*;
 @RequiredArgsConstructor
 public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implements BaseRepository<TEntity, TId> {
 
-    private final EntityManager em;
-    private final ModelMapper modelMapper;
-    private final Class<TEntity> entityClass;
+    protected final EntityManager em;
+    protected final ModelMapper modelMapper;
+    protected final Class<TEntity> entityClass;
 
     @Override
     public <TOutDto, TInputDto extends QueryParams> PageResult<TOutDto> findAll(TInputDto dtoIn, Class<TOutDto> dtoOutClass) {

@@ -1,11 +1,13 @@
 package com.worklyze.worklyze.domain.entity;
 
+import com.worklyze.worklyze.infra.converters.DurationToLongConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -21,16 +23,23 @@ public class Demand extends BaseEntity<UUID> {
     @GeneratedValue
     private UUID id;
 
+    @Column(nullable = false)
     private String name;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private String totalTime;
 
-    @ManyToOne
+    @Column(nullable = false)
+    private LocalDate startDate;
+
+    private LocalDate endDate;
+
+    @Column(nullable = false)
+    @Convert(converter = DurationToLongConverter.class)
+    private Duration totalTime;
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id")
     private TypeStatus typeStatus;
 
-    @ManyToOne
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 }

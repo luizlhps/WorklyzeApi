@@ -3,7 +3,7 @@ package com.worklyze.worklyze.infra.config.security;
 
 import com.worklyze.worklyze.application.service.JwtService;
 import com.worklyze.worklyze.domain.entity.User;
-import com.worklyze.worklyze.infra.repository.UserRepository;
+import com.worklyze.worklyze.domain.interfaces.repository.UserRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

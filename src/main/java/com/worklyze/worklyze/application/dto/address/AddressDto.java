@@ -1,4 +1,4 @@
-package com.worklyze.worklyze.application.dto;
+package com.worklyze.worklyze.application.dto.address;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
