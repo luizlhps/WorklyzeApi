@@ -21,7 +21,7 @@ import java.util.UUID;
 public class TaskSimpleUpdateInDto {
     private UUID id;
 
-    private String nome;
+    private String name;
 
     private DemandDto demand;
 

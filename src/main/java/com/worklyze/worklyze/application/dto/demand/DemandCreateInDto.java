@@ -27,10 +27,6 @@ public class DemandCreateInDto {
     @Size(max = 100, message = "O nome deve ter no máximo 100 caracteres.")
     private String name;
 
-    @NotNull(message = "A data de início é obrigatória.")
-    @PastOrPresent(message = "A data de início não pode ser futura.")
-    private LocalDate startDate;
-
     private TypeStatusDto typeStatus;
     private UserDto user;
 

@@ -1,5 +1,7 @@
 package com.worklyze.worklyze.application.service;
 
+import com.worklyze.worklyze.application.dto.UserMeInDto;
+import com.worklyze.worklyze.application.dto.UserMeOutDto;
 import com.worklyze.worklyze.application.dto.activitity.*;
 import com.worklyze.worklyze.application.dto.demand.DemandUpdateOutDto;
 import com.worklyze.worklyze.application.dto.task.TaskGetTimeTotalInDto;
@@ -36,6 +38,11 @@ public class UserServiceImpl extends BaseServiceImpl<User, UUID> implements User
     public UserServiceImpl(UserRepository repository, ModelMapper modelMapper, EntityManager entityManager) {
         super(repository, modelMapper, entityManager);
         this.repository = repository;
+    }
+
+    public UserMeOutDto getMe(UserMeInDto userMeInDto) {
+        User user = repository.findByEmail(userMeInDto.getEmail()).orElseThrow(() -> new NotFoundException("Usuario nao encontrado", null));
+        return modelMapper.map(user, UserMeOutDto.class);
     }
 
 }

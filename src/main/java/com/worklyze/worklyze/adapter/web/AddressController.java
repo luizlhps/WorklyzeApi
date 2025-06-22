@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/addresses")
+@RequestMapping("/v1/addresses")
 public class AddressController {
 
     private final AddressService addressService;

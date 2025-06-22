@@ -27,8 +27,8 @@ public class UserRepositoryImpl extends BaseRepositoryImpl<User, UUID> implement
 
         User user = em.createQuery(sql, User.class)
                 .setParameter("email", email)
-                .setParameter("username", username)
-                .getSingleResult();
+                .getResultList()
+                .stream().findFirst().orElse(null);
 
         if (user != null) {
             return Optional.of(user);
@@ -46,7 +46,8 @@ public class UserRepositoryImpl extends BaseRepositoryImpl<User, UUID> implement
 
         User user = em.createQuery(sql, User.class)
                 .setParameter("email", email)
-                .getSingleResult();
+                .getResultList()
+                .stream().findFirst().orElse(null);
 
         if (user != null) {
             return Optional.of(user);

@@ -13,6 +13,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
@@ -24,11 +25,13 @@ public class DemandServiceImpl extends BaseServiceImpl<Demand, UUID> implements 
     @Override
     public DemandCreateOutDto create(DemandCreateInDto dto) {
         var typeStatus = new DemandCreateInDto.TypeStatusDto();
+
         typeStatus.setId(TypeStatusEnum.ABERTO.getValue());
         dto.setTypeStatus(typeStatus);
 
         var entity = modelMapper.map(dto, Demand.class);
         entity.setTotalTime(Duration.ZERO);
+        entity.setStartDate(LocalDate.now());
 
         Demand tEntityCreated = repository.create(entity);
 

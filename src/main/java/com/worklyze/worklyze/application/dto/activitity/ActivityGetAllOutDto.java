@@ -35,7 +35,7 @@ public class ActivityGetAllOutDto {
     @AllArgsConstructor
     @AutoMap(Task.class)
     public static class TaskDto {
-        private Long id;
+        private UUID id;
     }
 
     @Getter

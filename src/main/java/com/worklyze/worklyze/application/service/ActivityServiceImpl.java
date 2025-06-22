@@ -60,9 +60,6 @@ public class ActivityServiceImpl extends BaseServiceImpl<Activity, UUID> impleme
     public ActivityFinishOutDto finish(ActivityFinishInDto dto) {
         Activity entity = findById(dto.getId(), Activity.class);
 
-        // apenas activties
-
-
         if (entity == null) {
             throw new NotFoundException(ACTIVITY_NOT_FOUND.getMessage(), ACTIVITY_NOT_FOUND.getCode());
         }
@@ -82,10 +79,8 @@ public class ActivityServiceImpl extends BaseServiceImpl<Activity, UUID> impleme
 
         Duration restTotal = repository.getTimeRestTotal(task.getId(), startDay, endDay);
 
-        // pega o total de atividades e adiciona na tarefa o tempo total
         var taskUpdateOutDto = updateTotalTimeTask(task);
 
-        // pega o tempo total de tasks e adiciona na demanda
         updateTotalTimeDemand(task);
 
         var activityDto = modelMapper.map(entity, ActivityFinishOutDto.ActivityDto.class);

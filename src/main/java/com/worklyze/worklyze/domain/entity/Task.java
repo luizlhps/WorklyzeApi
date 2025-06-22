@@ -22,7 +22,7 @@ public class Task extends BaseEntity<UUID> {
     private UUID id;
 
     @Column(nullable = false)
-    private String nome;
+    private String name;
 
     @Column(nullable = false)
     @Convert(converter = DurationToLongConverter.class)

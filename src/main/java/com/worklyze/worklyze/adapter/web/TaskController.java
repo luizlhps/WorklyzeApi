@@ -10,11 +10,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/tasks")
+@RequestMapping("/v1/tasks")
 public class TaskController {
 
     private final TaskService taskService;
@@ -35,7 +36,11 @@ public class TaskController {
 
         var created = taskService.create(dto);
 
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+        var uri = UriComponentsBuilder.fromPath("/tasks/{id}")
+                .buildAndExpand(created.getId())
+                .toUri();
+
+        return ResponseEntity.created(uri).body(created);
     }
 
     @PutMapping("/{id}")

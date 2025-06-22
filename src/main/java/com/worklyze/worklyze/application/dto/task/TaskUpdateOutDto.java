@@ -23,7 +23,7 @@ import java.util.UUID;
 public class TaskUpdateOutDto {
     private UUID id;
 
-    private String nome;
+    private String name;
 
     private Duration timeTotal;
 

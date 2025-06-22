@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implements BaseRepository<TEntity, TId> {
@@ -48,6 +49,10 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
 
         // Projeta os campos do DTO de saída
         buildSelectionsFromDtoFields(dtoOutClass, "", root, selections, joins);
+
+        //apenas ativos
+        predicates.add(cb.equal(root.get("deleted"), false));
+
         cq.multiselect(selections);
 
         // Filtros com base nos campos preenchidos do DTO de entrada
@@ -65,56 +70,63 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
 
         var result = tuples.getResultList();
 
-        Map<Object, Map<String, List<Object>>> groupedCollectionValues = new HashMap<>();
-
-        Map<Object, Tuple> primaryTuples = new HashMap<>();
-
-
-        /*Sem esse agrupamento, acabaria criando um DTO por linha no resultado,
-        repetindo o pai N vezes em vez de ter N filhos dentro de um único pai.
-        Essa é a razão de existir desse laço “duplo” que separa as tuplas de pai
-        e coleta os valores das coleções.*/
-
-        for (Tuple tuple : result) {
-            Object primaryKey = tuple.get("id");
-            // guarda a primeira ocorrência do Tuple de cada entidade-pai
-            primaryTuples.putIfAbsent(primaryKey, tuple);
-
-            for (Selection<?> selection : selections) {
-                String alias = selection.getAlias();
-
-                if (alias.contains(".")) {
-                    String[] parts = alias.split("\\.");
-                    String collectionPath = parts[0];
-                    Object value = tuple.get(alias);
-
-                    if (value == null) continue;
-
-                    // vai acumulando os valores daquela coleção, por id de pai
-                    groupedCollectionValues
-                            .computeIfAbsent(primaryKey, k -> new HashMap<>())
-                            .computeIfAbsent(collectionPath, k -> new ArrayList<>())
-                            .add(value);
-
-                }
-            }
-        }
+        // Agrupa as tuplas pelo ID da entidade principal (Demand)
+        Map<Object, List<Tuple>> groupedTuples = result.stream()
+                .collect(Collectors.groupingBy(tuple -> tuple.get("id")));
 
         var totalCount = totalCount(cb, entityClass);
-
         PageResultImpl<TOutDto> pageResult = buildPageResult(dtoIn, totalCount);
 
-        // Map Tuples to DTOs
-        List<TOutDto> items = primaryTuples.values().stream()
-                .map(tuple -> {
+
+        // Mapeia os grupos de tuplas para DTOs
+// Mapeia os grupos de tuplas para DTOs
+        List<TOutDto> items = groupedTuples.entrySet().stream()
+                .map(entry -> {
                     try {
+                        List<Tuple> tuplesForDemand = entry.getValue();
+                        Tuple anyTuple = tuplesForDemand.get(0); // Para os campos escalares da Demand
+
+                        // Cria uma nova instância do DTO de saída
                         TOutDto dto = dtoOutClass.getDeclaredConstructor().newInstance();
-                        Object primaryKey = tuple.get("id");
-                        Map<String, List<Object>> collectionValues = groupedCollectionValues.getOrDefault(primaryKey, Collections.emptyMap());
-                        buildOutDto(dtoOutClass, "", tuple, dto, collectionValues);
+
+                        // Preenche os campos escalares e objetos aninhados
+                        for (Field field : dtoOutClass.getDeclaredFields()) {
+                            field.setAccessible(true);
+                            String fieldName = field.getName();
+
+                            if (Collection.class.isAssignableFrom(field.getType())) {
+                                // Trata coleções (ex.: tasks)
+                                ParameterizedType collectionType = (ParameterizedType) field.getGenericType();
+                                Class<?> elementType = (Class<?>) collectionType.getActualTypeArguments()[0];
+
+                                // Usa LinkedHashSet para evitar duplicatas
+                                Set<Object> collectionItems = new LinkedHashSet<>();
+                                for (Tuple tuple : tuplesForDemand) {
+                                    if (tuple.get(fieldName + ".id") != null) { // Verifica se há dados válidos para a coleção
+                                        Object elementInstance = elementType.getDeclaredConstructor().newInstance();
+                                        // Chamada segura com cast explícito
+                                        buildOutDtoSafe(elementType, fieldName, tuple, elementInstance);
+                                        collectionItems.add(elementInstance);
+                                    }
+                                }
+                                field.set(dto, new ArrayList<>(collectionItems));
+                            } else if (field.getType().getName().startsWith("java.") || field.getType().isPrimitive()) {
+                                // Campos primitivos da Demand
+                                Object value = anyTuple.get(fieldName);
+                                field.set(dto, value);
+                            } else {
+                                // Objetos aninhados (ex.: typeStatus, user)
+                                if (!isAllNullForPrefix(anyTuple, fieldName)) {
+                                    Object nestedInstance = field.getType().getDeclaredConstructor().newInstance();
+                                    // Chamada segura com cast explícito
+                                    buildOutDtoSafe(field.getType(), fieldName, anyTuple, nestedInstance);
+                                    field.set(dto, nestedInstance);
+                                }
+                            }
+                        }
+
                         return dto;
-                    } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                             NoSuchMethodException e) {
+                    } catch (Exception e) {
                         throw new RuntimeException("Erro ao mapear Tuple para DTO", e);
                     }
                 })
@@ -124,21 +136,62 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         return pageResult;
     }
 
-    private <TInputDto extends QueryParams> void buildPredicates(TInputDto dtoIn, Root<?> root, Map<String, Join<?, ?>> joins, List<Predicate> predicates, CriteriaBuilder cb, CriteriaQuery<Tuple> cq) {
-        if (dtoIn != null) {
-            for (Field field : dtoIn.getClass().getDeclaredFields()) {
-                field.setAccessible(true);
-                try {
-                    Object value = field.get(dtoIn);
-                    if (value != null) {
-                        Path<?> path = resolvePath(root, field.getName(), joins);
+    @SuppressWarnings("unchecked")
+    private <T> void buildOutDtoSafe(Class<?> clazz, String prefix, Tuple tuple, Object instance) {
+        buildOutDto((Class<T>) clazz, prefix, tuple, (T) instance, Collections.emptyMap());
+    }
+
+    private void buildPredicatesRecursively(
+            Object dto,
+            String prefix,
+            From<?, ?> rootOrJoin,
+            Map<String, Join<?, ?>> joins,
+            List<Predicate> predicates,
+            CriteriaBuilder cb
+    ) {
+        if (dto == null) return;
+
+        Class<?> dtoClass = dto.getClass();
+        for (Field field : dtoClass.getDeclaredFields()) {
+            field.setAccessible(true);
+            try {
+                Object value = field.get(dto);
+                if (value != null) {
+                    String fieldPath = prefix.isEmpty() ? field.getName() : prefix + "." + field.getName();
+                    if (field.getType().getAnnotation(AutoMap.class) != null) {
+                        // Campo aninhado
+                        Join<?, ?> join = joins.computeIfAbsent(field.getName(), k -> rootOrJoin.join(field.getName(), JoinType.INNER));
+                        buildPredicatesRecursively(value, field.getName(), join, joins, predicates, cb);
+                    } else {
+                        // Campo primitivo
+                        Path<?> path = resolvePath(rootOrJoin, fieldPath, joins);
                         predicates.add(cb.equal(path, value));
                     }
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException("Erro ao acessar campo do DTO de entrada", e);
                 }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Erro ao acessar campo do DTO de entrada", e);
             }
         }
+    }
+
+    private <TInputDto extends QueryParams> void buildPredicates(
+            TInputDto dtoIn,
+            Root<?> root,
+            Map<String, Join<?, ?>> joins,
+            List<Predicate> predicates,
+            CriteriaBuilder cb,
+            CriteriaQuery<?> cq
+    ) {
+        if (dtoIn == null) {
+            return;
+        }
+
+        // Garantir que o map de joins não seja nulo
+        if (joins == null) {
+            joins = new HashMap<>();
+        }
+
+        buildPredicatesRecursively(dtoIn, "", root, joins, predicates, cb);
 
         if (!predicates.isEmpty()) {
             cq.where(predicates.toArray(new Predicate[0]));
@@ -315,21 +368,24 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         ParameterizedType collectionType = (ParameterizedType) field.getGenericType();
         Class<?> elementType = (Class<?>) collectionType.getActualTypeArguments()[0];
 
-        @SuppressWarnings("unchecked")
-        Collection<Object> collectionInstance = (Collection<Object>) field.getType().getDeclaredConstructor().newInstance();
+        // Usar LinkedHashSet para manter ordem e evitar duplicatas
+        Collection<Object> collectionInstance = new ArrayList<>();
 
-        List<Object> values = collectionValues.getOrDefault(fieldPath, Collections.emptyList());
+        // Obter os IDs únicos da coleção
+        List<Object> ids = collectionValues.getOrDefault(fieldPath, Collections.emptyList());
 
-        for (Object value : values) {
+        // Mapear cada elemento da coleção
+        for (Object id : new LinkedHashSet<>(ids)) { // Deduplicar IDs
             if (elementType.getName().startsWith("java.") || elementType.isPrimitive()) {
-                collectionInstance.add(value);
+                collectionInstance.add(id);
                 continue;
             }
-            Object elementInstance = ((Class<Object>) elementType).getDeclaredConstructor().newInstance();
 
-            @SuppressWarnings("unchecked")
-            Class<Object> safeElementType = (Class<Object>) elementType;
-            buildOutDto(safeElementType, fieldPath, tuple, elementInstance, collectionValues);
+            // Criar uma instância do elemento da coleção (ex.: TaskDto)
+            Object elementInstance = elementType.getDeclaredConstructor().newInstance();
+
+            // Mapear os campos do elemento usando a tupla original
+            buildOutDto((Class<Object>) elementType, fieldPath, tuple, elementInstance, collectionValues);
             collectionInstance.add(elementInstance);
         }
 

@@ -23,5 +23,5 @@ public class TypeProvider extends BaseEntity<Long> {
     private Long id;
 
     @Column(nullable = false)
-    private String nome;
+    private String name;
 }

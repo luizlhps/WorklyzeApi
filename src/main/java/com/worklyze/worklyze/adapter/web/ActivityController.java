@@ -10,11 +10,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/activitities")
+@RequestMapping("/v1/activitities")
 public class ActivityController {
 
     private final ActivityService activitityService;
@@ -35,7 +36,11 @@ public class ActivityController {
 
         var created = activitityService.create(dto);
 
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+        var uri = UriComponentsBuilder.fromPath("/activitities/{id}")
+                .buildAndExpand(created.getId())
+                .toUri();
+
+        return ResponseEntity.created(uri).body(created);
     }
 
     @PutMapping("/{id}")

@@ -56,6 +56,6 @@ public class AddressGetAllOutDto {
     public static class TypeProviderDto  {
         private Long id;
 
-        private String nome;
+        private String name;
     }
 }

@@ -26,7 +26,7 @@ import java.util.UUID;
 @Setter
 @AutoMap(Task.class)
 public class TaskCreateInDto {
-    private String nome;
+    private String name;
 
     private DemandDto demand;
 

@@ -36,7 +36,7 @@ public class ActivityGetAllInDto extends QueryParamsImpl {
     @AllArgsConstructor
     @AutoMap(Task.class)
     public static class TaskDto {
-        private Long id;
+        private UUID id;
     }
 
     @Getter
