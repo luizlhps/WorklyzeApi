@@ -74,12 +74,11 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         Map<Object, List<Tuple>> groupedTuples = result.stream()
                 .collect(Collectors.groupingBy(tuple -> tuple.get("id")));
 
-        var totalCount = totalCount(cb, entityClass);
+        var totalCount = totalCount(cb, entityClass, dtoIn);
         PageResultImpl<TOutDto> pageResult = buildPageResult(dtoIn, totalCount);
 
 
-        // Mapeia os grupos de tuplas para DTOs
-// Mapeia os grupos de tuplas para DTOs
+    // Mapeia os grupos de tuplas para DTOs
         List<TOutDto> items = groupedTuples.entrySet().stream()
                 .map(entry -> {
                     try {
@@ -199,13 +198,22 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
     }
 
 
-    private Long totalCount(CriteriaBuilder cb, Class<?> entityClass) {
+    private <TInputDto extends QueryParams> Long totalCount(
+            CriteriaBuilder cb,
+            Class<?> entityClass,
+            TInputDto dtoIn
+    ) {
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<?> countRoot = countQuery.from(entityClass);
         countQuery.select(cb.count(countRoot));
 
-        var totalCount = em.createQuery(countQuery).getSingleResult();
-        return totalCount;
+        Map<String, Join<?, ?>> joins = new HashMap<>();
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(cb.equal(countRoot.get("deleted"), false));
+        buildPredicates(dtoIn, countRoot, joins, predicates, cb, countQuery);
+
+        return em.createQuery(countQuery).getSingleResult();
     }
 
     @Transactional

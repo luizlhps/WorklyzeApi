@@ -4,6 +4,7 @@ import com.worklyze.worklyze.domain.entity.Demand;
 import com.worklyze.worklyze.domain.entity.TypeStatus;
 import com.worklyze.worklyze.domain.entity.User;
 import com.worklyze.worklyze.shared.annotation.AutoMap;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,12 +22,15 @@ import java.util.UUID;
 public class DemandUpdateInDto {
     private UUID id;
 
+    @NotNull
     private String name;
 
+    @NotNull
     private LocalDate startDate;
 
     private LocalDate endDate;
 
+    @NotNull
     private TypeStatusDto typeStatus;
 
     private UserDto user;

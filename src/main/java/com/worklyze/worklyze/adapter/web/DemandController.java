@@ -9,6 +9,7 @@ import com.worklyze.worklyze.domain.interfaces.services.DemandService;
 import com.worklyze.worklyze.infra.config.security.CustomUserPrincipal;
 import com.worklyze.worklyze.shared.exceptions.NotFoundException;
 import com.worklyze.worklyze.shared.page.interfaces.PageResult;
+import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
@@ -57,7 +58,7 @@ public class DemandController {
     @PutMapping("/{id}")
     public ResponseEntity<DemandUpdateOutDto> update(
             @PathVariable UUID id,
-            @RequestBody DemandUpdateInDto dto,
+            @RequestBody @Valid DemandUpdateInDto dto,
             @AuthenticationPrincipal CustomUserPrincipal user) {
         dto.setId(id);
         dto.setUser(new DemandUpdateInDto.UserDto(user.getId()));
