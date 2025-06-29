@@ -267,6 +267,13 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
             cq.where(predicates.toArray(new Predicate[0]));
         }
 
+        //todo: add sort
+        if (dtoIn.getSort() != null && !dtoIn.getSort().isEmpty()) {
+
+        } else {
+            cq.orderBy(cb.desc(root.get("createdAt")));
+        }
+
         // Criar a query tipada
         TypedQuery<TId> query = em.createQuery(cq);
 
