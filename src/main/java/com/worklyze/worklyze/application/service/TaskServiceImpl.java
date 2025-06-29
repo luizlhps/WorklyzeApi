@@ -5,11 +5,16 @@ import com.worklyze.worklyze.domain.entity.Task;
 import com.worklyze.worklyze.domain.entity.TypeStatus;
 import com.worklyze.worklyze.domain.enums.TypeStatusEnum;
 import com.worklyze.worklyze.domain.interfaces.repository.TaskRepository;
+import com.worklyze.worklyze.domain.interfaces.services.ActivityService;
 import com.worklyze.worklyze.domain.interfaces.services.TaskService;
 import com.worklyze.worklyze.shared.exceptions.NotFoundException;
+import com.worklyze.worklyze.shared.page.interfaces.PageResult;
 import jakarta.persistence.EntityManager;
 import org.modelmapper.ModelMapper;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.ModelAttribute;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -59,6 +64,22 @@ public class TaskServiceImpl extends BaseServiceImpl<Task, UUID> implements Task
     @Override
     public TaskGetTimeTotalOutDto getTimeTotal(TaskGetTimeTotalInDto dto) {
         return new TaskGetTimeTotalOutDto(repository.getTotalTime(dto.getDemandId()));
+    }
+
+
+    @Override
+    public TaskStatusUpdateOutDto statusUpdate(TaskStatusUpdateInDto dto) {
+        Task entity = findById(dto.getId(), Task.class);
+
+        if (entity == null) {
+            throw new NotFoundException(TASK_NOT_FOUND.getMessage(), TASK_NOT_FOUND.getCode());
+        }
+
+        if (!dto.getUser().getId().equals(entity.getUser().getId())) {
+            throw new NotFoundException(TASK_NOT_FOUND.getMessage(), TASK_NOT_FOUND.getCode());
+        }
+
+        return update(dto, Task.class, TaskStatusUpdateOutDto.class);
     }
 
 }

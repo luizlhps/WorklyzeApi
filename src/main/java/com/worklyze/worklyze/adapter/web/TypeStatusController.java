@@ -1,5 +1,7 @@
 package com.worklyze.worklyze.adapter.web;
 
+import com.worklyze.worklyze.application.dto.task.TaskStatusUpdateInDto;
+import com.worklyze.worklyze.application.dto.task.TaskStatusUpdateOutDto;
 import com.worklyze.worklyze.application.dto.typestatus.TypeStatusGetAllInDto;
 import com.worklyze.worklyze.application.dto.typestatus.TypeStatusGetAllOutDto;
 import com.worklyze.worklyze.domain.interfaces.services.TypeStatusService;
@@ -28,5 +30,7 @@ public class TypeStatusController {
 
         return ResponseEntity.ok(getAll);
     }
+
+
 
 }

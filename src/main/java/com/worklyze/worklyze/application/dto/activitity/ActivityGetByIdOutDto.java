@@ -1,8 +1,7 @@
-package com.worklyze.worklyze.application.dto.demand;
+package com.worklyze.worklyze.application.dto.activitity;
 
-import com.worklyze.worklyze.domain.entity.Demand;
+import com.worklyze.worklyze.domain.entity.Activity;
 import com.worklyze.worklyze.domain.entity.Task;
-import com.worklyze.worklyze.domain.entity.TypeStatus;
 import com.worklyze.worklyze.domain.entity.User;
 import com.worklyze.worklyze.shared.annotation.AutoMap;
 import com.worklyze.worklyze.shared.page.QueryParamsImpl;
@@ -11,33 +10,34 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Duration;
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-@AutoMap(Demand.class)
-public class DemandGetAllInDto extends QueryParamsImpl {
-
+@AutoMap(Activity.class)
+public class ActivityGetByIdOutDto {
     private UUID id;
-    private String name;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private Duration totalTime;
 
-    private TypeStatusDto typeStatus;
+    private OffsetDateTime startTime;
+
+    private OffsetDateTime endTime;
+
+    private String name;
+
+    private TaskDto task;
+
     private UserDto user;
 
     @Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
-    @AutoMap(TypeStatus.class)
-    public static class TypeStatusDto {
-        private Long id;
+    @AutoMap(Task.class)
+    public static class TaskDto {
+        private UUID id;
     }
 
     @Getter

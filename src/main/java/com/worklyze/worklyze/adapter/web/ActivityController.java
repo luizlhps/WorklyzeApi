@@ -15,7 +15,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/v1/activitities")
+@RequestMapping("/v1/activities")
 public class ActivityController {
 
     private final ActivityService activitityService;
@@ -36,7 +36,7 @@ public class ActivityController {
 
         var created = activitityService.create(dto);
 
-        var uri = UriComponentsBuilder.fromPath("/activitities/{id}")
+        var uri = UriComponentsBuilder.fromPath("{id}")
                 .buildAndExpand(created.getId())
                 .toUri();
 
@@ -63,9 +63,35 @@ public class ActivityController {
 
     @GetMapping("")
     public ResponseEntity<PageResult<ActivityGetAllOutDto>> getAll(
-            @ParameterObject @ModelAttribute ActivityGetAllInDto dto) {
+            @ParameterObject @ModelAttribute ActivityGetAllInDto dto,
+            @AuthenticationPrincipal CustomUserPrincipal user
+    ) {
+        var userDto = new ActivityGetAllInDto.UserDto(user.getId());
+        dto.setUser(userDto);
+
         PageResult<ActivityGetAllOutDto> getAll = activitityService.findAll(dto, ActivityGetAllOutDto.class);
+
         return ResponseEntity.ok(getAll);
+    }
+
+    @GetMapping("{id}")
+    public ResponseEntity<ActivityGetByIdOutDto> getById(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal CustomUserPrincipal user
+    ) {
+
+        return ResponseEntity.ok(activitityService.getById(id, user.getId()));
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<ActivityGetActiveOutDto> getActive(
+            @AuthenticationPrincipal CustomUserPrincipal user) {
+
+        var userId = user.getId();
+        ActivityGetActiveInDto dto = new ActivityGetActiveInDto();
+        dto.setUser(new ActivityGetActiveInDto.UserDto(userId));
+
+        return ResponseEntity.ok(activitityService.getActive(dto));
     }
 
 }

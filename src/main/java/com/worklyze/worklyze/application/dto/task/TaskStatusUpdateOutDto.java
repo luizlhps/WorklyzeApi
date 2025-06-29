@@ -1,4 +1,4 @@
-package com.worklyze.worklyze.application.dto.demand;
+package com.worklyze.worklyze.application.dto.task;
 
 import com.worklyze.worklyze.domain.entity.Demand;
 import com.worklyze.worklyze.domain.entity.Task;
@@ -12,24 +12,38 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-@AutoMap(Demand.class)
-public class DemandGetAllInDto extends QueryParamsImpl {
-
+@AutoMap(Task.class)
+public class TaskStatusUpdateOutDto extends QueryParamsImpl {
     private UUID id;
+
     private String name;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private Duration totalTime;
+
+    private Duration timeTotal;
+
+    private Duration restTotal;
+
+    private DemandDto demand;
 
     private TypeStatusDto typeStatus;
+
     private UserDto user;
+
+    private Boolean deleted = false;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @AutoMap(Demand.class)
+    public static class DemandDto {
+        private UUID id;
+    }
 
     @Getter
     @Setter

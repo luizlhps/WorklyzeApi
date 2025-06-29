@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -44,4 +45,7 @@ public class Task extends BaseEntity<UUID> {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @OneToMany(mappedBy = "task")
+    private List<Activity> activities;
 }

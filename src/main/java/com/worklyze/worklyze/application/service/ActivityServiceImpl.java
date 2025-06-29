@@ -15,6 +15,7 @@ import com.worklyze.worklyze.domain.interfaces.services.DemandService;
 import com.worklyze.worklyze.domain.interfaces.services.TaskService;
 import com.worklyze.worklyze.infra.repository.ActivityRepositoryImpl;
 import com.worklyze.worklyze.shared.exceptions.NotFoundException;
+import com.worklyze.worklyze.shared.page.interfaces.PageResult;
 import jakarta.persistence.EntityManager;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import static com.worklyze.worklyze.adapter.exception.ActivityExceptionCode.ACTIVITY_ALREADY_ACTIVITY;
 import static com.worklyze.worklyze.adapter.exception.ActivityExceptionCode.ACTIVITY_NOT_FOUND;
 import static com.worklyze.worklyze.adapter.exception.TaskExceptionCode.TASK_NOT_FOUND;
 
@@ -47,6 +49,12 @@ public class ActivityServiceImpl extends BaseServiceImpl<Activity, UUID> impleme
         var typeStatus = new TypeStatus();
         typeStatus.setId(TypeStatusEnum.ABERTO.getValue());
 
+        var activeActivity = repository.getActive(dto.getUser().getId());
+
+        if (activeActivity != null) {
+            throw new NotFoundException(ACTIVITY_ALREADY_ACTIVITY.getMessage(), ACTIVITY_ALREADY_ACTIVITY.getCode());
+        }
+
         Activity entity = modelMapper.map(dto, Activity.class);
 
         entity.setStartTime(OffsetDateTime.now());
@@ -68,6 +76,10 @@ public class ActivityServiceImpl extends BaseServiceImpl<Activity, UUID> impleme
             throw new NotFoundException(ACTIVITY_NOT_FOUND.getMessage(), ACTIVITY_NOT_FOUND.getCode());
         }
 
+        modelMapper.map(dto, entity);
+
+        update(dto, Activity.class, ActivityFinishOutDto.class);
+
         Task task = taskService.findById(dto.getTask().getId(), Task.class);
 
         if (task == null) {
@@ -75,7 +87,8 @@ public class ActivityServiceImpl extends BaseServiceImpl<Activity, UUID> impleme
         }
 
         LocalDateTime startDay = LocalDate.now().atStartOfDay();
-        LocalDateTime endDay = LocalDate.now().atTime(23, 59, 59);;
+        LocalDateTime endDay = LocalDate.now().atTime(23, 59, 59);
+        ;
 
         Duration restTotal = repository.getTimeRestTotal(task.getId(), startDay, endDay);
 
@@ -108,6 +121,42 @@ public class ActivityServiceImpl extends BaseServiceImpl<Activity, UUID> impleme
     @Override
     public ActivityGetTimeTotalActivitiesOutDto getTimeTotalActivities(ActivityGetTimeTotalActivitiesInDto dto) {
         return new ActivityGetTimeTotalActivitiesOutDto(repository.getTimeTotalActivities(dto.getTaskId()));
+    }
+
+    @Override
+    public ActivityGetActiveOutDto getActive(ActivityGetActiveInDto dto) {
+        Activity entity = repository.getActive(dto.getUser().getId());
+        var activityDto = new ActivityGetActiveOutDto();
+
+        if (entity == null) {
+            activityDto.setActive(false);
+
+            return activityDto;
+        }
+
+        activityDto.setId(entity.getId());
+        activityDto.setTask(new ActivityGetActiveOutDto.TaskDto(entity.getTask().getId()));
+        activityDto.setStartTime(entity.getStartTime());
+
+        return activityDto;
+    }
+
+    @Override
+    public ActivityGetByIdOutDto getById(UUID id, UUID userId) {
+        var activityGetAllInDto = new ActivityGetAllInDto();
+        var userDto = new ActivityGetAllInDto.UserDto(userId);
+
+        activityGetAllInDto.setUser(userDto);
+        activityGetAllInDto.setId(id);
+
+        PageResult<ActivityGetAllOutDto> getAll = repository.findAll(activityGetAllInDto, ActivityGetAllOutDto.class);
+
+        if (getAll.getItems().isEmpty()) {
+            throw new NotFoundException(ACTIVITY_NOT_FOUND.getMessage(), ACTIVITY_NOT_FOUND.getCode());
+
+        }
+
+        return modelMapper.map(getAll.getItems().getFirst(), ActivityGetByIdOutDto.class);
     }
 
 }

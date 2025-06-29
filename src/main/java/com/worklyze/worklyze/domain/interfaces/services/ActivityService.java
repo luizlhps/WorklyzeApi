@@ -9,4 +9,6 @@ public interface ActivityService extends BaseService<Activity, UUID> {
     ActivityCreateOutDto create(ActivityCreateInDto dto);
     ActivityFinishOutDto finish(ActivityFinishInDto dto);
     ActivityGetTimeTotalActivitiesOutDto getTimeTotalActivities(ActivityGetTimeTotalActivitiesInDto dto);
+    ActivityGetActiveOutDto getActive(ActivityGetActiveInDto dto);
+    ActivityGetByIdOutDto getById(UUID id, UUID userId);
 }

@@ -1,6 +1,7 @@
 package com.worklyze.worklyze.adapter.web;
 
 import com.worklyze.worklyze.application.dto.task.*;
+import com.worklyze.worklyze.application.dto.typestatus.TypeStatusGetAllOutDto;
 import com.worklyze.worklyze.domain.entity.Task;
 import com.worklyze.worklyze.domain.interfaces.services.TaskService;
 import com.worklyze.worklyze.infra.config.security.CustomUserPrincipal;
@@ -62,9 +63,29 @@ public class TaskController {
 
     @GetMapping("")
     public ResponseEntity<PageResult<TaskGetAllOutDto>> getAll(
-            @ParameterObject @ModelAttribute TaskGetAllInDto dto) {
+            @ParameterObject @ModelAttribute TaskGetAllInDto dto,
+            @AuthenticationPrincipal CustomUserPrincipal user
+            ) {
+
+        dto.setUser(new TaskGetAllInDto.UserDto(user.getId()));
         PageResult<TaskGetAllOutDto> getAll = taskService.findAll(dto, TaskGetAllOutDto.class);
+
         return ResponseEntity.ok(getAll);
     }
 
+    @PutMapping("{id}/status")
+    public ResponseEntity<TaskStatusUpdateOutDto> updateStatus(
+            @PathVariable UUID id,
+            @RequestBody TaskStatusUpdateInDto dto,
+            @AuthenticationPrincipal CustomUserPrincipal user) {
+        var userId = user.getId();
+        var taskStatusUpdateInDto = new TaskStatusUpdateInDto.UserDto(userId);
+        dto.setUser(taskStatusUpdateInDto);
+
+        dto.setId(id);
+
+        TaskStatusUpdateOutDto getAll = taskService.statusUpdate(dto);
+
+        return ResponseEntity.ok(getAll);
+    }
 }

@@ -5,8 +5,6 @@ import com.worklyze.worklyze.domain.entity.Task;
 import com.worklyze.worklyze.domain.entity.TypeStatus;
 import com.worklyze.worklyze.domain.entity.User;
 import com.worklyze.worklyze.shared.annotation.AutoMap;
-import com.worklyze.worklyze.shared.page.QueryParamsImpl;
-import com.worklyze.worklyze.shared.page.interfaces.QueryParams;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

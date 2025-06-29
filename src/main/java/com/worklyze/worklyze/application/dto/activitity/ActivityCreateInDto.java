@@ -13,6 +13,9 @@ import lombok.Setter;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+//todo adicionar validação para n passar do horario atual e n deixar passar o end time ser menor que o start time
+
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -20,8 +23,6 @@ import java.util.UUID;
 @AutoMap(Activity.class)
 public class ActivityCreateInDto {
     private OffsetDateTime startTime;
-
-    private OffsetDateTime endTime;
 
     private String name;
 

@@ -3,6 +3,7 @@ package com.worklyze.worklyze.infra.repository;
 import com.worklyze.worklyze.domain.interfaces.repository.BaseRepository;
 import com.worklyze.worklyze.domain.interfaces.entity.Identifiable;
 import com.worklyze.worklyze.shared.annotation.AutoMap;
+import com.worklyze.worklyze.shared.annotation.InAnnotation;
 import com.worklyze.worklyze.shared.exceptions.NotFoundException;
 import com.worklyze.worklyze.shared.page.PageResultImpl;
 import com.worklyze.worklyze.shared.page.interfaces.PageResult;
@@ -32,112 +33,35 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
     @Override
     public <TOutDto, TInputDto extends QueryParams> PageResult<TOutDto> findAll(TInputDto dtoIn, Class<TOutDto> dtoOutClass) {
         AutoMap autoMap = dtoIn.getClass().getAnnotation(AutoMap.class);
-
         if (autoMap == null) {
             throw new IllegalArgumentException("DTO de entrada precisa ter @AutoMap apontando para a entidade.");
         }
-
         Class<?> entityClass = autoMap.value();
 
+        //  Obter os IDs paginados
+        List<TId> paginatedIds = getPaginatedIds(dtoIn, entityClass);
+
+        // Obter o total de registros
         CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<Tuple> cq = cb.createTupleQuery();
-        Root<?> root = cq.from(entityClass);
+        Long totalCount = totalCount(cb, entityClass, dtoIn);
 
-        Map<String, Join<?, ?>> joins = new HashMap<>();
-        List<Selection<?>> selections = new ArrayList<>();
-        List<Predicate> predicates = new ArrayList<>();
-
-        // Projeta os campos do DTO de saída
-        buildSelectionsFromDtoFields(dtoOutClass, "", root, selections, joins);
-
-        //apenas ativos
-        predicates.add(cb.equal(root.get("deleted"), false));
-
-        cq.multiselect(selections);
-
-        // Filtros com base nos campos preenchidos do DTO de entrada
-        buildPredicates(dtoIn, root, joins, predicates, cb, cq);
-
-        TypedQuery<Tuple> tuples = em.createQuery(cq);
-
-        if (!dtoIn.getPagination().getAllRows()) {
-            int offset = dtoIn.getPagination().getOffset();
-            int size = dtoIn.getPagination().getPageSize();
-
-            tuples.setFirstResult(offset);
-            tuples.setMaxResults(size);
-        }
-
-        var result = tuples.getResultList();
-
-        // Agrupa as tuplas pelo ID da entidade principal (Demand)
-        Map<Object, List<Tuple>> groupedTuples = result.stream()
-                .collect(Collectors.groupingBy(tuple -> tuple.get("id")));
-
-        var totalCount = totalCount(cb, entityClass, dtoIn);
+        // Construir o PageResult
         PageResultImpl<TOutDto> pageResult = buildPageResult(dtoIn, totalCount);
 
+        if (paginatedIds.isEmpty()) {
+            pageResult.setItems(Collections.emptyList());
+            return pageResult;
+        }
 
-    // Mapeia os grupos de tuplas para DTOs
-        List<TOutDto> items = groupedTuples.entrySet().stream()
-                .map(entry -> {
-                    try {
-                        List<Tuple> tuplesForDemand = entry.getValue();
-                        Tuple anyTuple = tuplesForDemand.get(0); // Para os campos escalares da Demand
-
-                        // Cria uma nova instância do DTO de saída
-                        TOutDto dto = dtoOutClass.getDeclaredConstructor().newInstance();
-
-                        // Preenche os campos escalares e objetos aninhados
-                        for (Field field : dtoOutClass.getDeclaredFields()) {
-                            field.setAccessible(true);
-                            String fieldName = field.getName();
-
-                            if (Collection.class.isAssignableFrom(field.getType())) {
-                                // Trata coleções (ex.: tasks)
-                                ParameterizedType collectionType = (ParameterizedType) field.getGenericType();
-                                Class<?> elementType = (Class<?>) collectionType.getActualTypeArguments()[0];
-
-                                // Usa LinkedHashSet para evitar duplicatas
-                                Set<Object> collectionItems = new LinkedHashSet<>();
-                                for (Tuple tuple : tuplesForDemand) {
-                                    if (tuple.get(fieldName + ".id") != null) { // Verifica se há dados válidos para a coleção
-                                        Object elementInstance = elementType.getDeclaredConstructor().newInstance();
-                                        // Chamada segura com cast explícito
-                                        buildOutDtoSafe(elementType, fieldName, tuple, elementInstance);
-                                        collectionItems.add(elementInstance);
-                                    }
-                                }
-                                field.set(dto, new ArrayList<>(collectionItems));
-                            } else if (field.getType().getName().startsWith("java.") || field.getType().isPrimitive()) {
-                                // Campos primitivos da Demand
-                                Object value = anyTuple.get(fieldName);
-                                field.set(dto, value);
-                            } else {
-                                // Objetos aninhados (ex.: typeStatus, user)
-                                if (!isAllNullForPrefix(anyTuple, fieldName)) {
-                                    Object nestedInstance = field.getType().getDeclaredConstructor().newInstance();
-                                    // Chamada segura com cast explícito
-                                    buildOutDtoSafe(field.getType(), fieldName, anyTuple, nestedInstance);
-                                    field.set(dto, nestedInstance);
-                                }
-                            }
-                        }
-
-                        return dto;
-                    } catch (Exception e) {
-                        throw new RuntimeException("Erro ao mapear Tuple para DTO", e);
-                    }
-                })
-                .toList();
+        // Passo 2: Obter os dados completos
+        List<TOutDto> items = getFullData(paginatedIds, dtoOutClass);
 
         pageResult.setItems(items);
         return pageResult;
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> void buildOutDtoSafe(Class<?> clazz, String prefix, Tuple tuple, Object instance) {
-        buildOutDto((Class<T>) clazz, prefix, tuple, (T) instance, Collections.emptyMap());
+    private void buildOutDtoSafe(Class<?> clazz, String prefix, Tuple tuple, Object instance, Map<String, List<Object>> collectionValues) {
+        buildOutDto(clazz, prefix, tuple, instance, collectionValues);
     }
 
     private void buildPredicatesRecursively(
@@ -157,6 +81,17 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
                 Object value = field.get(dto);
                 if (value != null) {
                     String fieldPath = prefix.isEmpty() ? field.getName() : prefix + "." + field.getName();
+
+                    if (field.isAnnotationPresent(InAnnotation.class) && value instanceof Collection<?>) {
+                        Collection<?> collection = (Collection<?>) value;
+                        if (!collection.isEmpty()) {
+                            Path<?> path = resolvePath(rootOrJoin, fieldPath, joins);
+                            predicates.add(path.in(collection));
+                        }
+
+                        continue;
+                    }
+
                     if (field.getType().getAnnotation(AutoMap.class) != null) {
                         // Campo aninhado
                         Join<?, ?> join = joins.computeIfAbsent(field.getName(), k -> rootOrJoin.join(field.getName(), JoinType.INNER));
@@ -238,6 +173,112 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         }
 
         return existingEntity;
+    }
+
+    private <TOutDto> List<TOutDto> getFullData(List<TId> ids, Class<TOutDto> dtoOutClass) {
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Tuple> cq = cb.createTupleQuery();
+        Root<?> root = cq.from(entityClass);
+
+        Map<String, Join<?, ?>> joins = new HashMap<>();
+        List<Selection<?>> selections = new ArrayList<>();
+
+        buildSelectionsFromDtoFields(dtoOutClass, "", root, selections, joins);
+        cq.multiselect(selections);
+
+        Path<TId> idPath = root.get("id");
+        cq.where(idPath.in(ids));
+
+        TypedQuery<Tuple> query = em.createQuery(cq);
+        List<Tuple> result = query.getResultList();
+
+        Map<TId, List<Tuple>> groupedTuples = result.stream()
+                .collect(Collectors.groupingBy(tuple -> (TId) tuple.get("id")));
+
+        return ids.stream()
+                .map(id -> {
+                    List<Tuple> tuplesForId = groupedTuples.get(id);
+                    if (tuplesForId == null || tuplesForId.isEmpty()) {
+                        return null;
+                    }
+                    Tuple anyTuple = tuplesForId.get(0);
+                    try {
+                        TOutDto dto = dtoOutClass.getDeclaredConstructor().newInstance();
+                        for (Field field : dtoOutClass.getDeclaredFields()) {
+                            field.setAccessible(true);
+                            String fieldName = field.getName();
+
+                            if (Collection.class.isAssignableFrom(field.getType())) {
+                                ParameterizedType collectionType = (ParameterizedType) field.getGenericType();
+                                Class<?> elementType = (Class<?>) collectionType.getActualTypeArguments()[0];
+                                List<Object> collectionItems = tuplesForId.stream()
+                                        .filter(tuple -> tuple.get(fieldName + ".id") != null)
+                                        .map(tuple -> {
+                                            try {
+                                                Object elementInstance = elementType.getDeclaredConstructor().newInstance();
+                                                buildOutDtoSafe(elementType, fieldName, tuple, elementInstance, Collections.emptyMap());
+                                                return elementInstance;
+                                            } catch (Exception e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                        })
+                                        .collect(Collectors.toList());
+                                field.set(dto, collectionItems);
+                            } else if (field.getType().getName().startsWith("java.") || field.getType().isPrimitive()) {
+                                Object value = anyTuple.get(fieldName);
+                                field.set(dto, value);
+                            } else {
+                                if (!isAllNullForPrefix(anyTuple, fieldName)) {
+                                    Object nestedInstance = field.getType().getDeclaredConstructor().newInstance();
+                                    buildOutDtoSafe(field.getType(), fieldName, anyTuple, nestedInstance, Collections.emptyMap());
+                                    field.set(dto, nestedInstance);
+                                }
+                            }
+                        }
+                        return dto;
+                    } catch (Exception e) {
+                        throw new RuntimeException("Erro ao mapear Tuple para DTO", e);
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private <TInputDto extends QueryParams> List<TId> getPaginatedIds(TInputDto dtoIn, Class<?> entityClass) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<TId> cq = cb.createQuery((Class<TId>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[1]);
+        Root<?> root = cq.from(entityClass);
+
+        // Selecionar apenas o ID
+        cq.select(root.get("id"));
+
+        // Mapa de joins e lista de predicados
+        Map<String, Join<?, ?>> joins = new HashMap<>();
+        List<Predicate> predicates = new ArrayList<>();
+
+        // Aplicar filtros do DTO de entrada
+        buildPredicates(dtoIn, root, joins, predicates, cb, cq);
+
+        if (!predicates.isEmpty()) {
+            cq.where(predicates.toArray(new Predicate[0]));
+        }
+
+        // Criar a query tipada
+        TypedQuery<TId> query = em.createQuery(cq);
+
+        // Aplicar paginação, se necessário
+        if (!dtoIn.getPagination().getAllRows()) {
+            int offset = dtoIn.getPagination().getOffset();
+            int size = dtoIn.getPagination().getPageSize();
+            query.setFirstResult(offset);
+            query.setMaxResults(size);
+        }
+
+        return query.getResultList();
     }
 
     private void buildSelectionsFromDtoFields(
@@ -324,7 +365,7 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
     }
 
 
-    private static <TDto> void buildOutDto(Class<TDto> dtoClass, String prefix, Tuple tuple, TDto dto, Map<String, List<Object>> collectionValues) {
+    private static void buildOutDto(Class<?> dtoClass, String prefix, Tuple tuple, Object dto, Map<String, List<Object>> collectionValues) {
         try {
             for (Field field : dtoClass.getDeclaredFields()) {
                 field.setAccessible(true);

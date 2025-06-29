@@ -1,10 +1,8 @@
 package com.worklyze.worklyze.application.dto.task;
 
-import com.worklyze.worklyze.domain.entity.Demand;
-import com.worklyze.worklyze.domain.entity.Task;
-import com.worklyze.worklyze.domain.entity.TypeStatus;
-import com.worklyze.worklyze.domain.entity.User;
+import com.worklyze.worklyze.domain.entity.*;
 import com.worklyze.worklyze.shared.annotation.AutoMap;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,6 +10,8 @@ import lombok.Setter;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -28,11 +28,11 @@ public class TaskGetAllOutDto {
 
     private Duration restTotal;
 
-    private TaskCreateOutDto.DemandDto demand;
+    private DemandDto demand;
 
-    private TaskCreateOutDto.TypeStatusDto typeStatus;
+    private TypeStatusDto typeStatus;
 
-    private TaskCreateOutDto.UserDto user;
+    private List<ActivityDto> activities;
 
     @Getter
     @Setter
@@ -41,6 +41,7 @@ public class TaskGetAllOutDto {
     @AutoMap(Demand.class)
     public static class DemandDto {
         private UUID id;
+        private String name;
     }
 
     @Getter
@@ -50,15 +51,19 @@ public class TaskGetAllOutDto {
     @AutoMap(TypeStatus.class)
     public static class TypeStatusDto {
         private Long id;
+        private String name;
     }
 
     @Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
-    @AutoMap(User.class)
-    public static class UserDto {
+    @AutoMap(TypeStatus.class)
+    public static class ActivityDto {
         private UUID id;
+        private OffsetDateTime startTime;
+        private OffsetDateTime endTime;
+        private String name;
     }
 
 }
