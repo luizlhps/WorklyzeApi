@@ -193,6 +193,9 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         Path<TId> idPath = root.get("id");
         cq.where(idPath.in(ids));
 
+        //todo: add sort
+        cq.orderBy(cb.desc(root.get("createdAt")));
+
         TypedQuery<Tuple> query = em.createQuery(cq);
         List<Tuple> result = query.getResultList();
 
@@ -268,11 +271,7 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         }
 
         //todo: add sort
-        if (dtoIn.getSort() != null && !dtoIn.getSort().isEmpty()) {
-
-        } else {
-            cq.orderBy(cb.desc(root.get("createdAt")));
-        }
+        cq.orderBy(cb.desc(root.get("createdAt")));
 
         // Criar a query tipada
         TypedQuery<TId> query = em.createQuery(cq);
