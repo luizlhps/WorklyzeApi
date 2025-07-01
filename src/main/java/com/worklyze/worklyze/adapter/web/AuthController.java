@@ -45,6 +45,7 @@ public class AuthController {
         AuthResponse authResponse = authService.login(request);
 
         addCookiesInResponse(response, authResponse.token(), authResponse.refreshToken());
+
         var authWithoutRefreshToken = new AuthResponse(authResponse.token(), null);
         return ResponseEntity.ok(authWithoutRefreshToken);
     }
@@ -72,19 +73,19 @@ public class AuthController {
     }
 
     private static void addCookiesInResponse(HttpServletResponse response, String token, String refreshToken) {
-        Cookie accessTokenCookie = new Cookie("token", token);
-        accessTokenCookie.setHttpOnly(false);
-        accessTokenCookie.setSecure(true);
-        accessTokenCookie.setPath("/");
-        accessTokenCookie.setMaxAge(60 * 60);
+        String accessTokenCookie = String.format(
+                "token=%s; Path=/; Max-Age=%d; Secure; HttpOnly; SameSite=None",
+                token,
+                60 * 60
+        );
 
-        Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
-        refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(true);
-        refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
+        String refreshTokenCookie = String.format(
+                "refreshToken=%s; Path=/; Max-Age=%d; Secure; HttpOnly; SameSite=None",
+                refreshToken,
+                7 * 24 * 60 * 60
+        );
 
-        response.addCookie(accessTokenCookie);
-        response.addCookie(refreshTokenCookie);
+        response.addHeader("Set-Cookie", accessTokenCookie);
+        response.addHeader("Set-Cookie", refreshTokenCookie);
     }
 }
