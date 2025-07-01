@@ -132,6 +132,8 @@
                 </configuration>
             </plugin>
         </plugins>
+
+        <finalName>worklyze</finalName>
     </build>
 
 </project>
