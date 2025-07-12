@@ -74,7 +74,7 @@ public class AuthController {
 
     private static void addCookiesInResponse(HttpServletResponse response, String token, String refreshToken) {
         String accessTokenCookie = String.format(
-                "token=%s; Path=/; Max-Age=%d; Secure; HttpOnly; SameSite=None",
+                "token=%s; Path=/; Max-Age=%d; Secure; SameSite=None",
                 token,
                 60 * 60
         );

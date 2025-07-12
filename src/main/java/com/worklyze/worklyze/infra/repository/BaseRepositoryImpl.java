@@ -54,7 +54,7 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         }
 
         // Passo 2: Obter os dados completos
-        List<TOutDto> items = getFullData(paginatedIds, dtoOutClass);
+        List<TOutDto> items = getFullData(paginatedIds, dtoOutClass, dtoIn);
 
         pageResult.setItems(items);
         return pageResult;
@@ -175,7 +175,7 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         return existingEntity;
     }
 
-    private <TOutDto> List<TOutDto> getFullData(List<TId> ids, Class<TOutDto> dtoOutClass) {
+    private <TOutDto, TInputDto extends QueryParams> List<TOutDto> getFullData(List<TId> ids, Class<TOutDto> dtoOutClass, TInputDto dtoIn) {
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
@@ -193,8 +193,13 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         Path<TId> idPath = root.get("id");
         cq.where(idPath.in(ids));
 
-        //todo: add sort
-        cq.orderBy(cb.desc(root.get("createdAt")));
+        List<Order> orders = buildOrders(dtoIn.getSort(), root, cb, joins);
+
+        if (!orders.isEmpty()) {
+            cq.orderBy(orders);
+        } else {
+            cq.orderBy(cb.desc(root.get("createdAt"))); // Ordenação padrão
+        }
 
         TypedQuery<Tuple> query = em.createQuery(cq);
         List<Tuple> result = query.getResultList();
@@ -205,12 +210,16 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         return ids.stream()
                 .map(id -> {
                     List<Tuple> tuplesForId = groupedTuples.get(id);
+
                     if (tuplesForId == null || tuplesForId.isEmpty()) {
                         return null;
                     }
-                    Tuple anyTuple = tuplesForId.get(0);
+
+                    Tuple anyTuple = tuplesForId.getFirst();
+
                     try {
                         TOutDto dto = dtoOutClass.getDeclaredConstructor().newInstance();
+
                         for (Field field : dtoOutClass.getDeclaredFields()) {
                             field.setAccessible(true);
                             String fieldName = field.getName();
@@ -218,6 +227,7 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
                             if (Collection.class.isAssignableFrom(field.getType())) {
                                 ParameterizedType collectionType = (ParameterizedType) field.getGenericType();
                                 Class<?> elementType = (Class<?>) collectionType.getActualTypeArguments()[0];
+
                                 List<Object> collectionItems = tuplesForId.stream()
                                         .filter(tuple -> tuple.get(fieldName + ".id") != null)
                                         .map(tuple -> {
@@ -230,6 +240,7 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
                                             }
                                         })
                                         .collect(Collectors.toList());
+
                                 field.set(dto, collectionItems);
                             } else if (field.getType().getName().startsWith("java.") || field.getType().isPrimitive()) {
                                 Object value = anyTuple.get(fieldName);
@@ -242,6 +253,7 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
                                 }
                             }
                         }
+
                         return dto;
                     } catch (Exception e) {
                         throw new RuntimeException("Erro ao mapear Tuple para DTO", e);
@@ -409,6 +421,31 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
                  NoSuchMethodException e) {
             throw new RuntimeException("Erro ao mapear Tuple para DTO", e);
         }
+    }
+
+    private List<Order> buildOrders(String sort, Root<?> root, CriteriaBuilder cb, Map<String, Join<?, ?>> joins) {
+        List<Order> orders = new ArrayList<>();
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortParts = sort.split(",");
+
+            for (String part : sortParts) {
+                String[] fieldAndDirection = part.trim().split(":");
+
+                if (fieldAndDirection.length == 2) {
+                    String fieldPath = fieldAndDirection[0].trim();
+                    String direction = fieldAndDirection[1].trim().toLowerCase();
+                    Path<?> path = resolvePath(root, fieldPath, joins);
+
+                    if ("asc".equals(direction)) {
+                        orders.add(cb.asc(path));
+                    } else if ("desc".equals(direction)) {
+                        orders.add(cb.desc(path));
+                    }
+                }
+            }
+        }
+        return orders;
     }
 
     private static boolean isAllNullForPrefix(Tuple tuple, String prefix) {

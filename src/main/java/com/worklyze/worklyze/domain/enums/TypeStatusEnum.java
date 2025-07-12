@@ -16,7 +16,7 @@ public enum TypeStatusEnum {
     DENSEVOLVIMENTO(3L),
     TESTES(4L);
 
-    private Long value;
+    private final Long value;
 
     TypeStatusEnum(Long value) {
         this.value = value;

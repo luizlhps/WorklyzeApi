@@ -56,7 +56,8 @@ public class TaskGetAllInDto extends QueryParamsImpl {
     @AllArgsConstructor
     @AutoMap(TypeStatus.class)
     public static class TypeStatusDto {
-        private Long id;
+        @InAnnotation(Task.class)
+        private List<Long> id;
     }
 
     @Getter

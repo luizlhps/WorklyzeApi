@@ -4,5 +4,5 @@ import com.worklyze.worklyze.shared.page.PageListImpl;
 
 public interface QueryParams {
     PageListImpl getPagination();
-    String getSort();
+    String getSort(); // Ex: "field1:asc,field2:desc"
 }

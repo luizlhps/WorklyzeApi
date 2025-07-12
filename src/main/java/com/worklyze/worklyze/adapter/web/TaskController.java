@@ -3,6 +3,7 @@ package com.worklyze.worklyze.adapter.web;
 import com.worklyze.worklyze.application.dto.task.*;
 import com.worklyze.worklyze.application.dto.typestatus.TypeStatusGetAllOutDto;
 import com.worklyze.worklyze.domain.entity.Task;
+import com.worklyze.worklyze.domain.enums.TypeStatusEnum;
 import com.worklyze.worklyze.domain.interfaces.services.TaskService;
 import com.worklyze.worklyze.infra.config.security.CustomUserPrincipal;
 import com.worklyze.worklyze.shared.page.interfaces.PageResult;
@@ -13,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 @RestController
@@ -65,9 +67,22 @@ public class TaskController {
     public ResponseEntity<PageResult<TaskGetAllOutDto>> getAll(
             @ParameterObject @ModelAttribute TaskGetAllInDto dto,
             @AuthenticationPrincipal CustomUserPrincipal user
-            ) {
+    ) {
 
+        // todo: extract to service
         dto.setUser(new TaskGetAllInDto.UserDto(user.getId()));
+
+        if (dto.getTypeStatus() == null) {
+            var arrayStatusLong = new ArrayList<Long>();
+            arrayStatusLong.add(TypeStatusEnum.ABERTO.getValue());
+            arrayStatusLong.add(TypeStatusEnum.DENSEVOLVIMENTO.getValue());
+            arrayStatusLong.add(TypeStatusEnum.TESTES.getValue());
+
+            var typeStatusGetAllInDto = new TaskGetAllInDto.TypeStatusDto(arrayStatusLong);
+
+            dto.setTypeStatus(typeStatusGetAllInDto);
+        }
+
         PageResult<TaskGetAllOutDto> getAll = taskService.findAll(dto, TaskGetAllOutDto.class);
 
         return ResponseEntity.ok(getAll);
