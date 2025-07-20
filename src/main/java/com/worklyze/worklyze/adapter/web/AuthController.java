@@ -54,6 +54,12 @@ public class AuthController {
     public ResponseEntity<AuthResponse> refresh( HttpServletRequest request, HttpServletResponse response) {
         AuthRefresh requestDto = null;
 
+        var cookies = request.getCookies();
+
+        if (cookies == null) {
+            throw new UnauthorizedRequestException("Refresh Token Inválido", null);
+        }
+
         Optional<Cookie> refreshTokenCookie = Arrays.stream(request.getCookies())
                 .filter(cookie -> cookie.getName().equals("refreshToken"))
                 .findFirst();
