@@ -41,6 +41,7 @@ public class TaskSimpleUpdateOutDto{
     @AutoMap(Demand.class)
     public static class DemandDto {
         private UUID id;
+        private String name;
     }
 
     @Getter

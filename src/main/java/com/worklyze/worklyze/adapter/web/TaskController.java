@@ -1,14 +1,11 @@
 package com.worklyze.worklyze.adapter.web;
 
 import com.worklyze.worklyze.application.dto.task.*;
-import com.worklyze.worklyze.application.dto.typestatus.TypeStatusGetAllOutDto;
-import com.worklyze.worklyze.domain.entity.Task;
 import com.worklyze.worklyze.domain.enums.TypeStatusEnum;
 import com.worklyze.worklyze.domain.interfaces.services.TaskService;
 import com.worklyze.worklyze.infra.config.security.CustomUserPrincipal;
 import com.worklyze.worklyze.shared.page.interfaces.PageResult;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -44,6 +41,15 @@ public class TaskController {
                 .toUri();
 
         return ResponseEntity.created(uri).body(created);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal CustomUserPrincipal user
+    ) {
+        taskService.delete(id, user.getId());
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}")
@@ -86,6 +92,14 @@ public class TaskController {
         PageResult<TaskGetAllOutDto> getAll = taskService.findAll(dto, TaskGetAllOutDto.class);
 
         return ResponseEntity.ok(getAll);
+    }
+
+    @GetMapping("{id}")
+    public ResponseEntity<com.worklyze.worklyze.application.dto.task.TaskGetByIdOutDto> getById(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal CustomUserPrincipal user
+    ) {
+        return ResponseEntity.ok(taskService.findById(id, user.getId()));
     }
 
     @PutMapping("{id}/status")

@@ -10,4 +10,6 @@ public interface TaskService extends BaseService<Task, UUID> {
     TaskSimpleUpdateOutDto updateSimple(TaskSimpleUpdateInDto dto);
     TaskGetTimeTotalOutDto getTimeTotal(TaskGetTimeTotalInDto dto);
     TaskStatusUpdateOutDto statusUpdate(TaskStatusUpdateInDto dto);
+    TaskGetByIdOutDto findById(UUID id, UUID userId);
+    void delete (UUID id, UUID userId);
 }
