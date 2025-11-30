@@ -10,9 +10,7 @@ public class PasswordHash {
         return encoder.encode(password);
     }
 
-    public static boolean checkPassword(String password) {
-        var hashedPassword = hash(password);
-
-        return encoder.matches(password, hashedPassword);
+    public static boolean checkPassword(String password, String targetPassword) {
+        return encoder.matches(password, targetPassword);
     }
 }
