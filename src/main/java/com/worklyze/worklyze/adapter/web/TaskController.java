@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -79,13 +80,7 @@ public class TaskController {
         dto.setUser(new TaskGetAllInDto.UserDto(user.getId()));
 
         if (dto.getTypeStatus() == null) {
-            var arrayStatusLong = new ArrayList<Long>();
-            arrayStatusLong.add(TypeStatusEnum.ABERTO.getValue());
-            arrayStatusLong.add(TypeStatusEnum.DENSEVOLVIMENTO.getValue());
-            arrayStatusLong.add(TypeStatusEnum.TESTES.getValue());
-
-            var typeStatusGetAllInDto = new TaskGetAllInDto.TypeStatusDto(arrayStatusLong);
-
+            var typeStatusGetAllInDto = new TaskGetAllInDto.TypeStatusDto(null, List.of(TypeStatusEnum.FECHADO.getValue()));
             dto.setTypeStatus(typeStatusGetAllInDto);
         }
 

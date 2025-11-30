@@ -2,8 +2,10 @@ package com.worklyze.worklyze.infra.repository;
 
 import com.worklyze.worklyze.domain.interfaces.repository.BaseRepository;
 import com.worklyze.worklyze.domain.interfaces.entity.Identifiable;
+import com.worklyze.worklyze.shared.annotation.AttributeNameAnnotation;
 import com.worklyze.worklyze.shared.annotation.AutoMap;
 import com.worklyze.worklyze.shared.annotation.InAnnotation;
+import com.worklyze.worklyze.shared.annotation.NotInAnnotation;
 import com.worklyze.worklyze.shared.exceptions.NotFoundException;
 import com.worklyze.worklyze.shared.page.PageResultImpl;
 import com.worklyze.worklyze.shared.page.interfaces.PageResult;
@@ -80,13 +82,24 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
             try {
                 Object value = field.get(dto);
                 if (value != null) {
-                    String fieldPath = prefix.isEmpty() ? field.getName() : prefix + "." + field.getName();
+                    String fieldPath = getFieldPath(prefix, field);
 
                     if (field.isAnnotationPresent(InAnnotation.class) && value instanceof Collection<?>) {
                         Collection<?> collection = (Collection<?>) value;
                         if (!collection.isEmpty()) {
                             Path<?> path = resolvePath(rootOrJoin, fieldPath, joins);
                             predicates.add(path.in(collection));
+                        }
+
+                        continue;
+                    }
+
+                    if (field.isAnnotationPresent(NotInAnnotation.class) && value instanceof Collection<?>) {
+                        Collection<?> collection = (Collection<?>) value;
+
+                        if (!collection.isEmpty()) {
+                            Path<?> path = resolvePath(rootOrJoin, fieldPath, joins);
+                            predicates.add(cb.not(path.in(collection)));
                         }
 
                         continue;
@@ -106,6 +119,19 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
                 throw new RuntimeException("Erro ao acessar campo do DTO de entrada", e);
             }
         }
+    }
+
+    private static String getFieldPath(String prefix, Field field) {
+        if (field.isAnnotationPresent(AttributeNameAnnotation.class)) {
+            var attributeValue = field.getAnnotation(AttributeNameAnnotation.class).value();
+            return prefix.isEmpty() ? attributeValue : prefix + "." + attributeValue;
+        }
+
+        return prefix.isEmpty() ? field.getName() : prefix + "." + field.getName();
+    }
+
+    private static String getFieldPath(String prefix, String fieldName) {
+        return prefix.isEmpty() ? fieldName : prefix + "." + fieldName;
     }
 
     private <TInputDto extends QueryParams> void buildPredicates(
@@ -309,7 +335,7 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         for (Field field : dtoClass.getDeclaredFields()) {
             field.setAccessible(true);
 
-            String fieldPath = prefix.isEmpty() ? field.getName() : prefix + "." + field.getName();
+            String fieldPath = getFieldPath(prefix, field);
 
             if (Collection.class.isAssignableFrom(field.getType())) {
                 handleCollectionJoin((From<?, ?>) rootOrJoin, selections, joins, field, fieldPath);
@@ -362,7 +388,7 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
 
         for (int i = 0; i < parts.length; i++) {
             String part = parts[i];
-            currentPrefix = currentPrefix.isEmpty() ? part : currentPrefix + "." + part;
+            currentPrefix = getFieldPath(currentPrefix, part);
 
             if (joins.containsKey(currentPrefix)) {
                 path = joins.get(currentPrefix);
@@ -387,7 +413,7 @@ public class BaseRepositoryImpl<TEntity extends Identifiable<TId>, TId> implemen
         try {
             for (Field field : dtoClass.getDeclaredFields()) {
                 field.setAccessible(true);
-                String fieldPath = prefix.isEmpty() ? field.getName() : prefix + "." + field.getName();
+                String fieldPath = getFieldPath(prefix, field);
 
                 if (Collection.class.isAssignableFrom(field.getType())) {
                     handleCollectionOutDto(tuple, dto, collectionValues, field, fieldPath);

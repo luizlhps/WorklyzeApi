@@ -4,8 +4,10 @@ import com.worklyze.worklyze.domain.entity.Demand;
 import com.worklyze.worklyze.domain.entity.Task;
 import com.worklyze.worklyze.domain.entity.TypeStatus;
 import com.worklyze.worklyze.domain.entity.User;
+import com.worklyze.worklyze.shared.annotation.AttributeNameAnnotation;
 import com.worklyze.worklyze.shared.annotation.AutoMap;
 import com.worklyze.worklyze.shared.annotation.InAnnotation;
+import com.worklyze.worklyze.shared.annotation.NotInAnnotation;
 import com.worklyze.worklyze.shared.page.QueryParamsImpl;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -56,8 +58,11 @@ public class TaskGetAllInDto extends QueryParamsImpl {
     @AllArgsConstructor
     @AutoMap(TypeStatus.class)
     public static class TypeStatusDto {
-        @InAnnotation(Task.class)
-        private List<Long> id;
+        private Long id;
+
+        @AttributeNameAnnotation("id")
+        @NotInAnnotation(Task.class)
+        private List<Long> idNot;
     }
 
     @Getter
