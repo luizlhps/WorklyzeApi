@@ -58,7 +58,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new UnauthorizedRequestException(USUARIO_EMAIL_SENHA_INVALIDO.getMessage(), USUARIO_EMAIL_SENHA_INVALIDO.getCode()));
 
-        boolean isPasswordCorrect = PasswordHash.checkPassword(user.getPassword());
+        boolean isPasswordCorrect = PasswordHash.checkPassword(request.password(), user.getPassword());
 
         if (!isPasswordCorrect) {
             throw new UnauthorizedRequestException("Senha ou Email incorretos", null);
